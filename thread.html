@@ -352,6 +352,7 @@
          transition: all 0.2s ease;
          cursor: pointer;
          display: inline-block;
+         user-select: none;
        }
        
        .post-text .post-link:hover {
@@ -616,8 +617,17 @@
           }
         }
         
-        // Функция скрытия экрана загрузки
-        window.hideLoading = function() {
+                 // Глобальная функция для обработки кликов по ссылкам на посты
+         window.handlePostClick = function(postNum) {
+           // Находим Vue приложение и вызываем метод
+           const app = document.querySelector('#app').__vue_app__;
+           if (app && app._instance && app._instance.proxy) {
+             app._instance.proxy.scrollToPost(postNum);
+           }
+         };
+         
+         // Функция скрытия экрана загрузки
+         window.hideLoading = function() {
           if (isAppHidden) return;
           isAppHidden = true;
           
@@ -697,10 +707,7 @@
                      this.hasMore = endIndex < this.allPosts.length;
                      this.loadingMore = false;
                      
-                     // Настраиваем ссылки для новых постов
-                     this.$nextTick(() => {
-                       this.setupPostLinks();
-                     });
+
                    }, 300);
                  },
                 
@@ -796,10 +803,10 @@
                    let processedText = text
                      // Заменяем <br> на переносы строк
                      .replace(/<br\s*\/?>/gi, '<br>')
-                     // Обрабатываем ссылки на посты (>>123456) - более точный regex
-                     .replace(/>>(\d+)(?![^<]*>)/g, '<a href="#" class="post-link" data-post="$1">>>$1</a>')
+                     // Обрабатываем ссылки на посты (>>123456) - создаем span вместо a
+                     .replace(/>>(\d+)(?![^<]*>)/g, '<span class="post-link" data-post="$1" onclick="window.handlePostClick($1)">>>$1</span>')
                      // Обрабатываем ссылки на посты в формате >>123456 (с пробелами)
-                     .replace(/(?<!<[^>]*)(>>\s*(\d+))/g, '<a href="#" class="post-link" data-post="$2">>>$2</a>')
+                     .replace(/(?<!<[^>]*)(>>\s*(\d+))/g, '<span class="post-link" data-post="$2" onclick="window.handlePostClick($2)">>>$2</span>')
                      // Обрабатываем ссылки на треды
                      .replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi, '<a href="$1" target="_blank" class="external-link">$2</a>')
                      // Обрабатываем жирный текст
@@ -820,17 +827,7 @@
                    return processedText;
                  },
                  
-                 setupPostLinks() {
-                   // Находим все ссылки на посты и добавляем обработчики
-                   const postLinks = document.querySelectorAll('.post-link');
-                   postLinks.forEach(link => {
-                     link.addEventListener('click', (e) => {
-                       e.preventDefault();
-                       const postNum = link.getAttribute('data-post');
-                       this.scrollToPost(postNum);
-                     });
-                   });
-                 },
+
                  
                  scrollToPost(postNum) {
                    // Ищем пост с указанным номером
@@ -915,10 +912,7 @@
                  // Добавляем обработчик скролла для ленивой загрузки
                  window.addEventListener('scroll', this.onScroll);
                  
-                 // Добавляем обработчик кликов по ссылкам на посты
-                 this.$nextTick(() => {
-                   this.setupPostLinks();
-                 });
+
                },
               
               beforeUnmount() {
