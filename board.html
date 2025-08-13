@@ -234,6 +234,7 @@
          width: 80px;
          height: 80px;
          border-radius: 6px;
+         margin-top: 5px;
          overflow: hidden;
          background-color: var(--tg-theme-secondary-bg-color);
        }
@@ -243,11 +244,7 @@
          height: 100%;
          object-fit: cover;
          transition: transform 0.2s ease;
-       }
-       
-       .thread-card:hover .thread-image img {
-         transform: scale(1.05);
-       }
+       }     
        
        .thread-info {
          flex: 1;
@@ -655,27 +652,39 @@
                 parseThreads(data) {
                   // Парсим данные в зависимости от формата ответа
                   if (data.threads && Array.isArray(data.threads)) {
-                    return data.threads.map(thread => ({
-                      id: thread.num || thread.id,
-                      title: thread.subject || thread.title || 'Без названия',
-                      posts: thread.posts_count || thread.posts || 0,
-                      views: thread.views || 0,
-                      timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
-                      lastPost: thread.last_post || null,
-                      image: this.getThreadImage(thread)
-                    }));
+                    return data.threads.map(thread => {          
+                      return {
+                        id: thread.num || thread.id,
+                        title: thread.subject || thread.title || 'Без названия',
+                        posts: thread.posts_count || thread.posts || 0,
+                        views: thread.views || 0,
+                        timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
+                        lastPost: thread.last_post || null,
+                        image: this.getThreadImage(thread)
+                      };
+                    });
                   }
                   
                   if (data.catalog && Array.isArray(data.catalog)) {
-                    return data.catalog.map(thread => ({
-                      id: thread.num || thread.id,
-                      title: thread.subject || thread.title || 'Без названия',
-                      posts: thread.posts_count || thread.posts || 0,
-                      views: thread.views || 0,
-                      timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
-                      lastPost: thread.last_post || null,
-                      image: this.getThreadImage(thread)
-                    }));
+                    return data.catalog.map(thread => {
+                      // Отладочная информация о дате
+                      console.log(`Тред ${thread.num}:`, {
+                        timestamp: thread.timestamp,
+                        date: thread.date,
+                        dateType: typeof thread.date,
+                        parsed: thread.timestamp || thread.date * 1000 || Date.now()
+                      });
+                      
+                      return {
+                        id: thread.num || thread.id,
+                        title: thread.subject || thread.title || 'Без названия',
+                        posts: thread.posts_count || thread.posts || 0,
+                        views: thread.views || 0,
+                        timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
+                        lastPost: thread.last_post || null,
+                        image: this.getThreadImage(thread)
+                      };
+                    });
                   }
                   
                   return [];
@@ -957,26 +966,33 @@
 
                 
                 formatTimestamp(timestamp) {
-                  if (!timestamp) return 'Неизвестно';
+                  if (!timestamp || timestamp === 0) return 'Неизвестно';
                   
-                  const date = new Date(timestamp);
-                  if (isNaN(date.getTime())) return 'Неизвестно';
+                  let date;
                   
-                  const now = new Date();
-                  const diff = now - date;
-                  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                  const hours = Math.floor(diff / (1000 * 60 * 60));
-                  const minutes = Math.floor(diff / (1000 * 60));
-                  
-                  if (days > 0) {
-                    return `${days} дн. назад`;
-                  } else if (hours > 0) {
-                    return `${hours} ч. назад`;
-                  } else if (minutes > 0) {
-                    return `${minutes} мин. назад`;
+                  // Пробуем разные форматы timestamp
+                  if (typeof timestamp === 'string') {
+                    // Если это строка, пробуем распарсить
+                    date = new Date(timestamp);
+                  } else if (timestamp < 10000000000) {
+                    // Если timestamp в секундах (Unix timestamp), умножаем на 1000
+                    date = new Date(timestamp * 1000);
                   } else {
-                    return 'Только что';
+                    // Если timestamp в миллисекундах
+                    date = new Date(timestamp);
                   }
+                  
+                  if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+                    // Если дата некорректная или слишком старая, используем текущую дату
+                    date = new Date();
+                  }
+                  
+                  // Форматируем дату в формате дд.мм.гг
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                  const year = date.getFullYear().toString().slice(-2);
+                  
+                  return `${day}.${month}.${year}`;
                 }
               },
               
@@ -996,7 +1012,7 @@
               template: `
                 <div class="board-container">
                   <div class="board-header">
-                    <button class="back-button" @click="goBack">←</button>
+                    <button class="back-button" @click="goBack">Назад</button>
                     <div class="board-info">
                       <div class="board-id">/{{ boardInfo?.id }}/</div>
                       <div class="board-name">{{ boardInfo?.name }}</div>
@@ -1024,17 +1040,17 @@
                            <div class="thread-header">
                              <div class="thread-title">{{ thread.title }}</div>
                              <div class="thread-meta">
-                               <span>Тред #{{ thread.id }}</span>
+                               <span>#{{ thread.id }}</span>
                                <span>{{ formatTimestamp(thread.timestamp) }}</span>
                              </div>
                            </div>
                            <div class="thread-stats">
                              <div class="stat-item">
-                               <span>📝</span>
+                               <span>Постов: </span>
                                <span>{{ thread.posts }}</span>
                              </div>
                              <div class="thread-views">
-                               <span>👁️</span>
+                               <span>Просмотров: </span>
                                <span>{{ thread.views }}</span>
                              </div>
                            </div>
