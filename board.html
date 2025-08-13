@@ -128,6 +128,8 @@
         font-weight: bold;
       }
       
+
+      
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
@@ -211,15 +213,46 @@
         border-color: rgba(255,255,255,0.1);
       }
 
-      .thread-card {
-        background-color: var(--tg-theme-bg-color);
-        border-radius: 8px;
-        padding: 16px;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-      }
+             .thread-card {
+         background-color: var(--tg-theme-bg-color);
+         border-radius: 8px;
+         padding: 16px;
+         transition: all 0.2s ease;
+         cursor: pointer;
+         user-select: none;
+         position: relative;
+       }
+       
+       .thread-content {
+         display: flex;
+         gap: 16px;
+         align-items: flex-start;
+       }
+       
+       .thread-image {
+         flex-shrink: 0;
+         width: 80px;
+         height: 80px;
+         border-radius: 6px;
+         overflow: hidden;
+         background-color: var(--tg-theme-secondary-bg-color);
+       }
+       
+       .thread-image img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         transition: transform 0.2s ease;
+       }
+       
+       .thread-card:hover .thread-image img {
+         transform: scale(1.05);
+       }
+       
+       .thread-info {
+         flex: 1;
+         min-width: 0;
+       }
 
       html.dark .thread-card {
         background-color: var(--tg-theme-secondary-bg-color);
@@ -268,13 +301,21 @@
         color: var(--tg-theme-hint-color);
       }
 
-      .thread-stats {
-        display: flex;
-        gap: 16px;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(0,0,0,0.1);
-      }
+             .thread-stats {
+         display: flex;
+         gap: 16px;
+         margin-top: 12px;
+         padding-top: 12px;
+         border-top: 1px solid rgba(0,0,0,0.1);
+       }
+       
+       .thread-views {
+         display: flex;
+         align-items: center;
+         gap: 4px;
+         font-size: 14px;
+         color: var(--tg-theme-hint-color);
+       }
 
       html.dark .thread-stats {
         border-top-color: rgba(255,255,255,0.1);
@@ -293,6 +334,8 @@
         padding: 32px;
         color: var(--tg-theme-hint-color);
       }
+
+
 
       .retry-button {
         background-color: var(--tg-theme-button-color);
@@ -327,9 +370,19 @@
           padding: 12px;
         }
         
-        .thread-card {
-          padding: 12px;
-        }
+                 .thread-card {
+           padding: 12px;
+         }
+         
+         .thread-content {
+           flex-direction: row;
+           gap: 12px;
+         }
+         
+         .thread-image {
+           width: 60px;
+           height: 60px;
+         }
         
         .thread-card:not(:last-child)::after {
           left: 12px;
@@ -495,37 +548,32 @@
                 },
                 
                 async fetchThreads() {
-                  // Пробуем разные способы загрузки для обхода CORS
-                  const sources = [
-                    `https://2ch.hk/${this.boardId}/catalog.json`,
-                    `https://2ch.hk/${this.boardId}/threads.json`,
-                    `https://api.2ch.hk/${this.boardId}/threads.json`
-                  ];
+                  // Используем прокси-сервис для обхода CORS
+                  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://2ch.hk/${this.boardId}/catalog.json`)}`;
                   
-                  for (const source of sources) {
-                    try {
-                      const response = await fetch(source, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                          'Accept': 'application/json',
-                          'User-Agent': 'Mozilla/5.0 (compatible; TG-Imgboard/1.0)'
-                        }
-                      });
-                      
-                      if (response.ok) {
-                        const data = await response.json();
-                        return this.parseThreads(data);
+                  try {
+                    console.log('Загружаем данные через прокси...');
+                    const response = await fetch(proxyUrl, {
+                      method: 'GET',
+                      headers: {
+                        'Accept': 'application/json'
                       }
-                    } catch (e) {
-                      console.log(`Не удалось загрузить с ${source}:`, e);
-                      continue;
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      console.log('Данные получены:', data);
+                      return this.parseThreads(data);
+                    } else {
+                      throw new Error(`HTTP ${response.status}`);
                     }
+                  } catch (e) {
+                    console.error('Ошибка загрузки:', e);
+                    throw e;
                   }
-                  
-                  // Если все источники недоступны, возвращаем заглушку
-                  return this.getMockThreads();
                 },
+                
+
                 
                 parseThreads(data) {
                   // Парсим данные в зависимости от формата ответа
@@ -535,8 +583,9 @@
                       title: thread.subject || thread.title || 'Без названия',
                       posts: thread.posts_count || thread.posts || 0,
                       views: thread.views || 0,
-                      timestamp: thread.timestamp || Date.now(),
-                      lastPost: thread.last_post || null
+                      timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
+                      lastPost: thread.last_post || null,
+                      image: this.getThreadImage(thread)
                     }));
                   }
                   
@@ -546,43 +595,44 @@
                       title: thread.subject || thread.title || 'Без названия',
                       posts: thread.posts_count || thread.posts || 0,
                       views: thread.views || 0,
-                      timestamp: thread.timestamp || Date.now(),
-                      lastPost: thread.last_post || null
+                      timestamp: thread.timestamp || thread.date * 1000 || Date.now(),
+                      lastPost: thread.last_post || null,
+                      image: this.getThreadImage(thread)
                     }));
                   }
                   
-                  return this.getMockThreads();
+                  return [];
                 },
                 
-                getMockThreads() {
-                  // Заглушка для демонстрации
-                  return [
-                    {
-                      id: 1,
-                      title: 'Общий тред для обсуждения',
-                      posts: 150,
-                      views: 2500,
-                      timestamp: Date.now() - 3600000,
-                      lastPost: 'Последний пост'
-                    },
-                    {
-                      id: 2,
-                      title: 'Вопросы и ответы',
-                      posts: 89,
-                      views: 1200,
-                      timestamp: Date.now() - 7200000,
-                      lastPost: 'Новый вопрос'
-                    },
-                    {
-                      id: 3,
-                      title: 'Обмен опытом',
-                      posts: 234,
-                      views: 4100,
-                      timestamp: Date.now() - 1800000,
-                      lastPost: 'Интересный опыт'
+                getThreadImage(thread) {
+                  // Ищем картинку в треде
+                  if (thread.files && thread.files.length > 0) {
+                    const file = thread.files[0];
+                    if (file.thumbnail) {
+                      return `https://2ch.hk${file.thumbnail}`;
+                    } else if (file.path) {
+                      return `https://2ch.hk${file.path}`;
                     }
-                  ];
+                  }
+                  
+                  // Если нет файлов, ищем в постах
+                  if (thread.posts && thread.posts.length > 0) {
+                    for (const post of thread.posts) {
+                      if (post.files && post.files.length > 0) {
+                        const file = post.files[0];
+                        if (file.thumbnail) {
+                          return `https://2ch.hk${file.thumbnail}`;
+                        } else if (file.path) {
+                          return `https://2ch.hk${file.path}`;
+                        }
+                      }
+                    }
+                  }
+                  
+                  return null;
                 },
+                
+                
                 
                 getBoardName(boardId) {
                   const boardNames = {
@@ -815,7 +865,7 @@
                 },
                 
                 goBack() {
-                  window.location.href = '/';
+                  window.location.href = 'index.html';
                 },
                 
                 openThread(threadId) {
@@ -825,6 +875,31 @@
                 
                 retryLoad() {
                   this.loadThreads();
+                },
+                
+
+                
+                formatTimestamp(timestamp) {
+                  if (!timestamp) return 'Неизвестно';
+                  
+                  const date = new Date(timestamp);
+                  if (isNaN(date.getTime())) return 'Неизвестно';
+                  
+                  const now = new Date();
+                  const diff = now - date;
+                  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                  const hours = Math.floor(diff / (1000 * 60 * 60));
+                  const minutes = Math.floor(diff / (1000 * 60));
+                  
+                  if (days > 0) {
+                    return `${days} дн. назад`;
+                  } else if (hours > 0) {
+                    return `${hours} ч. назад`;
+                  } else if (minutes > 0) {
+                    return `${minutes} мин. назад`;
+                  } else {
+                    return 'Только что';
+                  }
                 }
               },
               
@@ -854,30 +929,33 @@
                     <button class="retry-button" @click="retryLoad">Повторить</button>
                   </div>
                   
-                  <div v-else-if="threads.length > 0" class="threads-grid">
-                    <div v-for="thread in threads" :key="thread.id" class="thread-card" @click="openThread(thread.id)">
-                      <div class="thread-header">
-                        <div class="thread-title">{{ thread.title }}</div>
-                        <div class="thread-meta">
-                          <span>Тред #{{ thread.id }}</span>
-                          <span>{{ new Date(thread.timestamp).toLocaleString() }}</span>
-                        </div>
-                      </div>
-                      <div class="thread-stats">
-                        <div class="stat-item">
-                          <span>📝</span>
-                          <span>{{ thread.posts }}</span>
-                        </div>
-                        <div class="stat-item">
-                          <span>👁️</span>
-                          <span>{{ thread.views }}</span>
-                        </div>
-                        <div class="stat-item" v-if="thread.lastPost">
-                          <span>💬</span>
-                          <span>{{ thread.lastPost }}</span>
-                        </div>
-                      </div>
-                    </div>
+                                     <div v-else-if="threads.length > 0" class="threads-grid">
+                                          <div v-for="thread in threads" :key="thread.id" class="thread-card" @click="openThread(thread.id)">
+                       <div class="thread-content">
+                         <div v-if="thread.image" class="thread-image">
+                           <img :src="thread.image" :alt="thread.title" loading="lazy">
+                         </div>
+                         <div class="thread-info">
+                           <div class="thread-header">
+                             <div class="thread-title">{{ thread.title }}</div>
+                             <div class="thread-meta">
+                               <span>Тред #{{ thread.id }}</span>
+                               <span>{{ formatTimestamp(thread.timestamp) }}</span>
+                             </div>
+                           </div>
+                           <div class="thread-stats">
+                             <div class="stat-item">
+                               <span>📝</span>
+                               <span>{{ thread.posts }}</span>
+                             </div>
+                             <div class="thread-views">
+                               <span>👁️</span>
+                               <span>{{ thread.views }}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
                   </div>
                   
                   <div v-else class="error-message">

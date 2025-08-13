@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
+<head>
+  <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
     <!-- Метатеги для iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -23,7 +23,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <!-- Встроенные базовые стили -->
-    <style>
+  <style>
       :root {
         --tg-theme-bg-color: #ffffff;
         --tg-theme-text-color: #222222;
@@ -47,8 +47,8 @@
       }
       
       * {
-        margin: 0;
-        padding: 0;
+      margin: 0;
+      padding: 0;
         box-sizing: border-box;
         -webkit-tap-highlight-color: transparent;
       }
@@ -96,7 +96,7 @@
         bottom: 0;
       }
       
-      #app {
+    #app {
         height: 100%;
         width: 100%;
         overflow-y: auto;
@@ -113,10 +113,10 @@
         left: 0;
         right: 0;
         bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
         background-color: var(--tg-theme-bg-color);
         color: var(--tg-theme-text-color);
         transition: opacity 0.3s;
@@ -132,7 +132,7 @@
       .spinner {
         width: 40px;
         height: 40px;
-        margin-bottom: 20px;
+      margin-bottom: 20px;
         border: 4px solid rgba(0, 0, 0, 0.1);
         border-left-color: var(--tg-theme-button-color);
         border-radius: 50%;
@@ -192,7 +192,7 @@
       }
 
       .category-title {
-        font-size: 18px;
+      font-size: 18px;
         font-weight: 600;
         margin-bottom: 16px;
         padding: 12px 16px;
@@ -225,7 +225,7 @@
           min-width: 200px;
           flex: 1 1 auto;
           position: relative;
-          cursor: pointer;
+      cursor: pointer;
           user-select: none;
         }
 
@@ -346,208 +346,208 @@
           .boards-container {
             overscroll-behavior: contain;
           }
-        }
-    </style>
-  </head>
-  <body>
+    }
+  </style>
+</head>
+<body>
     <!-- Базовый экран загрузки -->
     <div id="app-loading">
       <div class="spinner"></div>
       <div class="loading-text">BOARD LOADING...</div>
-    </div>
+  </div>
     
 
     
     <!-- Контейнер для Vue приложения -->
     <div id="app" style="display: none;"></div>
 
-    <script>
-      // Определяем iOS устройства
-      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  <script>
+    // Определяем iOS устройства
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
-      // Базовая проверка наличия Telegram WebApp API
-      window.addEventListener('DOMContentLoaded', function() {
+    // Базовая проверка наличия Telegram WebApp API
+    window.addEventListener('DOMContentLoaded', function() {
         console.log('DOMContentLoaded сработал');
         
-        // Элементы страницы
-        var appLoading = document.getElementById('app-loading');
-        var vueApp = document.getElementById('app');
-        var isAppHidden = false;
+      // Элементы страницы
+      var appLoading = document.getElementById('app-loading');
+      var vueApp = document.getElementById('app');
+      var isAppHidden = false;
         
         console.log('Элементы найдены:', { appLoading, vueApp });
+      
+      // Настраиваем для iOS
+      if (isIOS) {
+        document.body.classList.add('ios');
         
-        // Настраиваем для iOS
-        if (isIOS) {
-          document.body.classList.add('ios');
-          
-          // Специальные настройки для iOS полноэкранного режима
-          // Предотвращаем скроллинг страницы целиком на iOS
-          document.addEventListener('touchmove', function(event) {
+        // Специальные настройки для iOS полноэкранного режима
+        // Предотвращаем скроллинг страницы целиком на iOS
+        document.addEventListener('touchmove', function(event) {
             // Разрешаем скроллинг внутри приложения
             if (event.target.closest('#app') || event.target.closest('.boards-container')) {
               return; // Разрешаем прокрутку
             }
             // Блокируем прокрутку только для body
             event.preventDefault();
-          }, { passive: false });
+        }, { passive: false });
+      }
+      
+      // Инициализация Telegram API
+      var tg = null;
+      if (window.Telegram && window.Telegram.WebApp) {
+        tg = window.Telegram.WebApp;
+        
+        // Отключаем свайп вниз для закрытия приложения
+        try {
+          if (window.Telegram && window.Telegram.WebApp) {
+            var eventData = JSON.stringify({ allow_vertical_swipe: false });
+            if (window.TelegramWebviewProxy) {
+              window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', eventData);
+            } else {
+              window.parent.postMessage(JSON.stringify({
+                eventType: 'web_app_setup_swipe_behavior',
+                eventData: { allow_vertical_swipe: false }
+              }), 'https://web.telegram.org');
+            }
+            console.log('Свайп вниз отключен');
+          }
+        } catch (e) {
+          console.error('Ошибка при отключении свайпа вниз:', e);
         }
         
-        // Инициализация Telegram API
-        var tg = null;
-        if (window.Telegram && window.Telegram.WebApp) {
-          tg = window.Telegram.WebApp;
-          
-          // Отключаем свайп вниз для закрытия приложения
+        // Скрываем кнопку "Назад" в левом верхнем углу
+        try {
+          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
+            window.Telegram.WebApp.BackButton.hide();
+            console.log('Кнопка "Назад" скрыта');
+          }
+        } catch (e) {
+          console.error('Ошибка при скрытии кнопки "Назад":', e);
+        }
+        
+        // Блокировка ориентации экрана в портретном режиме
+        try {
+          if (window.Telegram && window.Telegram.WebApp) {
+            var orientationData = JSON.stringify({ locked: true });
+            if (window.TelegramWebviewProxy) {
+              window.TelegramWebviewProxy.postEvent('web_app_toggle_orientation_lock', orientationData);
+            } else {
+              window.parent.postMessage(JSON.stringify({
+                eventType: 'web_app_toggle_orientation_lock',
+                eventData: { locked: true }
+              }), 'https://web.telegram.org');
+            }
+            console.log('Ориентация экрана заблокирована');
+          }
+        } catch (e) {
+          console.error('Ошибка при блокировке ориентации экрана:', e);
+        }
+        
+        // Применяем темную тему если нужно
+        if (tg.colorScheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+        
+        // Настройка переменных CSS на основе Telegram темы
+        if (tg.themeParams) {
+          document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+          document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+          document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+          document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+          document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+          document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+          document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+        }
+        
+        // Функция активации полноэкранного режима
+        var toggleFullScreen = function() {
           try {
+            // Скрываем кнопки
             if (window.Telegram && window.Telegram.WebApp) {
-              var eventData = JSON.stringify({ allow_vertical_swipe: false });
-              if (window.TelegramWebviewProxy) {
-                window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', eventData);
-              } else {
-                window.parent.postMessage(JSON.stringify({
-                  eventType: 'web_app_setup_swipe_behavior',
-                  eventData: { allow_vertical_swipe: false }
-                }), 'https://web.telegram.org');
-              }
-              console.log('Свайп вниз отключен');
+              if (window.Telegram.WebApp.BackButton) window.Telegram.WebApp.BackButton.hide();
+              if (window.Telegram.WebApp.MainButton) window.Telegram.WebApp.MainButton.hide();
+              if (window.Telegram.WebApp.disableSwipeToClose) window.Telegram.WebApp.disableSwipeToClose();
             }
-          } catch (e) {
-            console.error('Ошибка при отключении свайпа вниз:', e);
-          }
-          
-          // Скрываем кнопку "Назад" в левом верхнем углу
-          try {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
-              window.Telegram.WebApp.BackButton.hide();
-              console.log('Кнопка "Назад" скрыта');
-            }
-          } catch (e) {
-            console.error('Ошибка при скрытии кнопки "Назад":', e);
-          }
-          
-          // Блокировка ориентации экрана в портретном режиме
-          try {
+            
+            // Добавляем класс для iOS
+            if (isIOS) document.body.classList.add('ios-fullscreen');
+            
+            // Расширяем окно всеми доступными методами
+            if (tg.expand) tg.expand();
+            if (tg.requestFullscreen) tg.requestFullscreen();
             if (window.Telegram && window.Telegram.WebApp) {
-              var orientationData = JSON.stringify({ locked: true });
-              if (window.TelegramWebviewProxy) {
-                window.TelegramWebviewProxy.postEvent('web_app_toggle_orientation_lock', orientationData);
-              } else {
-                window.parent.postMessage(JSON.stringify({
-                  eventType: 'web_app_toggle_orientation_lock',
-                  eventData: { locked: true }
-                }), 'https://web.telegram.org');
-              }
-              console.log('Ориентация экрана заблокирована');
+              if (window.Telegram.WebApp.expand) window.Telegram.WebApp.expand();
+              if (window.Telegram.WebApp.setViewportHeight) window.Telegram.WebApp.setViewportHeight(1.0);
             }
-          } catch (e) {
-            console.error('Ошибка при блокировке ориентации экрана:', e);
-          }
-          
-          // Применяем темную тему если нужно
-          if (tg.colorScheme === 'dark') {
-            document.documentElement.classList.add('dark');
-          }
-          
-          // Настройка переменных CSS на основе Telegram темы
-          if (tg.themeParams) {
-            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
-          }
-          
-          // Функция активации полноэкранного режима
-          var toggleFullScreen = function() {
+            
+            // Отправляем событие для расширения
             try {
-              // Скрываем кнопки
-              if (window.Telegram && window.Telegram.WebApp) {
-                if (window.Telegram.WebApp.BackButton) window.Telegram.WebApp.BackButton.hide();
-                if (window.Telegram.WebApp.MainButton) window.Telegram.WebApp.MainButton.hide();
-                if (window.Telegram.WebApp.disableSwipeToClose) window.Telegram.WebApp.disableSwipeToClose();
+              var expandData = JSON.stringify({force: true});
+              if (window.TelegramWebviewProxy) {
+                window.TelegramWebviewProxy.postEvent('web_app_expand', expandData);
+              } else {
+                window.parent.postMessage(JSON.stringify({
+                  eventType: 'web_app_expand',
+                  eventData: {force: true}
+                }), '*');
               }
-              
-              // Добавляем класс для iOS
-              if (isIOS) document.body.classList.add('ios-fullscreen');
-              
-              // Расширяем окно всеми доступными методами
-              if (tg.expand) tg.expand();
-              if (tg.requestFullscreen) tg.requestFullscreen();
-              if (window.Telegram && window.Telegram.WebApp) {
-                if (window.Telegram.WebApp.expand) window.Telegram.WebApp.expand();
-                if (window.Telegram.WebApp.setViewportHeight) window.Telegram.WebApp.setViewportHeight(1.0);
-              }
-              
-              // Отправляем событие для расширения
-              try {
-                var expandData = JSON.stringify({force: true});
-                if (window.TelegramWebviewProxy) {
-                  window.TelegramWebviewProxy.postEvent('web_app_expand', expandData);
-                } else {
-                  window.parent.postMessage(JSON.stringify({
-                    eventType: 'web_app_expand',
-                    eventData: {force: true}
-                  }), '*');
-                }
-              } catch (e) {}
-              
-              // Устанавливаем viewport
-              var viewportMeta = document.querySelector('meta[name="viewport"]');
-              if (viewportMeta) {
-                viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
-              }
-            } catch (e) {
-              console.error('Ошибка полноэкранного режима:', e);
+            } catch (e) {}
+            
+            // Устанавливаем viewport
+            var viewportMeta = document.querySelector('meta[name="viewport"]');
+            if (viewportMeta) {
+              viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
             }
-          };
+          } catch (e) {
+            console.error('Ошибка полноэкранного режима:', e);
+          }
+        };
 
-          // Автоматически активируем полноэкранный режим при загрузке
-          // Функция активации полноэкранного режима с повторами
-          var activateFullScreenMode = function(attempts) {
-            attempts = attempts || 0;
-            var maxAttempts = isIOS ? 3 : 2;
-            try {
-              toggleFullScreen();
-              if (isIOS && attempts < maxAttempts) {
-                setTimeout(function() {
-                  activateFullScreenMode(attempts + 1);
-                }, 300);
-              }
-            } catch (e) {
-              if (attempts < maxAttempts) {
-                setTimeout(function() {
-                  activateFullScreenMode(attempts + 1);
-                }, 300);
-              }
+        // Автоматически активируем полноэкранный режим при загрузке
+        // Функция активации полноэкранного режима с повторами
+        var activateFullScreenMode = function(attempts) {
+          attempts = attempts || 0;
+          var maxAttempts = isIOS ? 3 : 2;
+          try {
+            toggleFullScreen();
+            if (isIOS && attempts < maxAttempts) {
+              setTimeout(function() {
+                activateFullScreenMode(attempts + 1);
+              }, 300);
             }
-          };
+          } catch (e) {
+            if (attempts < maxAttempts) {
+              setTimeout(function() {
+                activateFullScreenMode(attempts + 1);
+              }, 300);
+            }
+          }
+        };
+        
+        // Запускаем активацию полноэкранного режима
+        setTimeout(activateFullScreenMode, isIOS ? 500 : 200);
+        
+        // Дополнительные события для iOS
+        if (isIOS) {
+          // При загрузке страницы
+          window.addEventListener('load', function() {
+            setTimeout(activateFullScreenMode, 500);
+          });
           
-          // Запускаем активацию полноэкранного режима
-          setTimeout(activateFullScreenMode, isIOS ? 500 : 200);
+          // При возвращении на страницу
+          document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) setTimeout(activateFullScreenMode, 300);
+          });
           
-          // Дополнительные события для iOS
-          if (isIOS) {
-            // При загрузке страницы
-            window.addEventListener('load', function() {
-              setTimeout(activateFullScreenMode, 500);
-            });
-            
-            // При возвращении на страницу
-            document.addEventListener('visibilitychange', function() {
-              if (!document.hidden) setTimeout(activateFullScreenMode, 300);
-            });
-            
-            // При получении фокуса
-            window.addEventListener('focus', function() {
-              setTimeout(activateFullScreenMode, 300);
-            });
-            
-            // При восстановлении из кэша
-            window.addEventListener('pageshow', function(event) {
-              if (event.persisted) setTimeout(activateFullScreenMode, 300);
-            });
+          // При получении фокуса
+          window.addEventListener('focus', function() {
+            setTimeout(activateFullScreenMode, 300);
+          });
+          
+          // При восстановлении из кэша
+          window.addEventListener('pageshow', function(event) {
+            if (event.persisted) setTimeout(activateFullScreenMode, 300);
+          });
           }
         }
         
@@ -565,13 +565,13 @@
           vueApp.style.display = 'block';
           
           try {
-                    // Инициализация Vue после DOMContentLoaded
+      // Инициализация Vue после DOMContentLoaded
         console.log('Начинаем инициализацию Vue...');
-        const { createApp } = Vue;
+      const { createApp } = Vue;
 
-            createApp({
-              data() {
-                return {
+      createApp({
+        data() {
+          return {
                   boards: [
                     {
                       id: "a",
@@ -1337,9 +1337,9 @@
                       link: "/wow/"
                     }
                   ]
-                };
-              },
-                             methods: {
+          };
+        },
+        methods: {
                  getBoardsByCategory() {
                    const categories = {};
                    this.boards.forEach(board => {
@@ -1401,9 +1401,9 @@
                       // Fallback
                       window.location.href = `board.html?id=${boardId}`;
                     }
-                  }
-               },
-              template: `
+          }
+        },
+        template: `
                 <div class="boards-container">
                   <div class="app-header">
                     <h1 class="main-title">СПИСОК РАЗДЕЛОВ</h1>
@@ -1424,9 +1424,9 @@
                        </div>
                     </div>
                   </div>
-                </div>
-              `
-            }).mount('#app');
+          </div>
+        `
+      }).mount('#app');
 
             console.log('Vue приложение успешно инициализировано');
             // Vue приложение уже показано в hideLoading
@@ -1464,9 +1464,9 @@
             window.hideLoading();
           }, 500);
         });
-      });
-    </script>
+    });
+  </script>
     
 
-  </body>
+</body>
 </html>
