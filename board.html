@@ -144,27 +144,29 @@
       .board-header {
         display: flex;
         position: fixed;
-        
+
         top: 0;           /* Прикрепляет к верхнему краю экрана */
-        left: 0;          /* Опционально: прикрепляет к левому краю */
+        left: 0;
+        right: 0;          /* Опционально: прикрепляет к левому краю */
         width: 100%;
-        z-index: 1000;    /* Убеждаемся, что он над другими элементами */
+        z-index: 1000;
 
         align-items: center;
         gap: 28px;
         margin-bottom: 24px;
         padding: 16px;
-        background-color: var(--tg-theme-secondary-bg-color);
-        border-radius: 12px;
+        background-color: rgb(255, 255, 255);
+
         border: 1px solid rgba(0,0,0,0.1);
       }
 
       html.dark .board-header {
         border-color: rgba(255,255,255,0.1);
+        background-color: rgba(97, 94, 94, 0.1);
       }
 
       .back-button {
-        background-color: rgba(121, 115, 115, 0.1);;
+        background-color: rgba(121, 115, 115, 0.1);
         border: 1px solid rgba(71, 49, 49, 0.1);
         font-size: 14px;
         font-weight: bold;
@@ -213,6 +215,7 @@
       .threads-grid {
         display: flex;
         flex-direction: column;
+        margin-top: 41%;
         gap: 12px;
         padding: 16px;
         background-color: var(--tg-theme-secondary-bg-color);
