@@ -1408,8 +1408,8 @@
                                              <div v-for="board in boards" :key="board.id" class="board-card" @click="openBoard(board.id)">
                          <div class="board-header">
                            <div class="board-link">
-                             <span class="board-id">/{{ board.id }}/ —</span>
-                             <span class="board-name">{{ board.name }}</span>
+                             <span class="board-id">/{{ board.id }}/</span>
+                             <span class="board-name">— {{ board.name }}</span>
                            </div>
                          </div>
                        </div>
