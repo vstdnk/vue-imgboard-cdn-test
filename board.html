@@ -349,9 +349,46 @@
         transition: opacity 0.2s ease;
       }
 
-      .retry-button:hover {
-        opacity: 0.8;
-      }
+             .retry-button:hover {
+         opacity: 0.8;
+       }
+       
+       .loading-more {
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 12px;
+         padding: 20px;
+         color: var(--tg-theme-hint-color);
+         font-size: 14px;
+       }
+       
+       .spinner.small {
+         width: 20px;
+         height: 20px;
+         border-width: 2px;
+       }
+       
+       .load-more-button {
+         display: flex;
+         justify-content: center;
+         padding: 20px;
+       }
+       
+       .load-more-btn {
+         background-color: var(--tg-theme-button-color);
+         color: var(--tg-theme-button-text-color);
+         border: none;
+         padding: 12px 24px;
+         border-radius: 8px;
+         font-size: 14px;
+         cursor: pointer;
+         transition: opacity 0.2s ease;
+       }
+       
+       .load-more-btn:hover {
+         opacity: 0.8;
+       }
 
       /* Адаптивность для мобильных устройств */
       @media (max-width: 768px) {
@@ -507,15 +544,20 @@
             const { createApp } = Vue;
 
             createApp({
-              data() {
-                return {
-                  boardId: boardId,
-                  boardInfo: null,
-                  threads: [],
-                  loading: false,
-                  error: null
-                };
-              },
+                             data() {
+                 return {
+                   boardId: boardId,
+                   boardInfo: null,
+                   threads: [],
+                   allThreads: [], // Все загруженные треды
+                   loading: false,
+                   error: null,
+                   page: 1,
+                   threadsPerPage: 20,
+                   hasMore: true,
+                   loadingMore: false
+                 };
+               },
               methods: {
                 async loadBoardInfo() {
                   try {
@@ -534,11 +576,15 @@
                 async loadThreads() {
                   this.loading = true;
                   this.error = null;
+                  this.page = 1;
                   
                   try {
-                    // Пытаемся загрузить треды с разных источников для обхода CORS
-                    const threads = await this.fetchThreads();
-                    this.threads = threads;
+                    // Загружаем все треды
+                    const allThreads = await this.fetchThreads();
+                    this.allThreads = allThreads;
+                    
+                    // Показываем первую страницу
+                    this.loadNextPage();
                   } catch (e) {
                     console.error('Ошибка при загрузке тредов:', e);
                     this.error = 'Не удалось загрузить треды. Возможно, проблема с CORS.';
@@ -547,12 +593,43 @@
                   }
                 },
                 
+                loadNextPage() {
+                  if (!this.hasMore || this.loadingMore) return;
+                  
+                  this.loadingMore = true;
+                  
+                  // Имитируем задержку для плавности
+                  setTimeout(() => {
+                    const startIndex = (this.page - 1) * this.threadsPerPage;
+                    const endIndex = startIndex + this.threadsPerPage;
+                    const newThreads = this.allThreads.slice(startIndex, endIndex);
+                    
+                    this.threads.push(...newThreads);
+                    this.page++;
+                    
+                    // Проверяем, есть ли еще треды
+                    this.hasMore = endIndex < this.allThreads.length;
+                    this.loadingMore = false;
+                  }, 300);
+                },
+                
+                onScroll() {
+                  // Проверяем, достигли ли конца списка
+                  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                  const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+                  const clientHeight = document.documentElement.clientHeight || window.innerHeight;
+                  
+                  if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    this.loadNextPage();
+                  }
+                },
+                
                 async fetchThreads() {
-                  // Используем прокси-сервис для обхода CORS
-                  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://2ch.hk/${this.boardId}/catalog.json`)}`;
+                  // Используем только codetabs прокси для обхода CORS
+                  const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=https://2ch.hk/${this.boardId}/catalog.json`;
                   
                   try {
-                    console.log('Загружаем данные через прокси...');
+                    console.log('Загружаем данные через codetabs прокси...');
                     const response = await fetch(proxyUrl, {
                       method: 'GET',
                       headers: {
@@ -562,14 +639,14 @@
                     
                     if (response.ok) {
                       const data = await response.json();
-                      console.log('Данные получены:', data);
+                      console.log('Данные получены через codetabs:', data);
                       return this.parseThreads(data);
                     } else {
                       throw new Error(`HTTP ${response.status}`);
                     }
                   } catch (e) {
-                    console.error('Ошибка загрузки:', e);
-                    throw e;
+                    console.error('Ошибка загрузки через codetabs:', e);
+                    throw new Error('Не удалось загрузить данные через codetabs прокси');
                   }
                 },
                 
@@ -903,10 +980,18 @@
                 }
               },
               
-              mounted() {
-                this.loadBoardInfo();
-                this.loadThreads();
-              },
+                             mounted() {
+                 this.loadBoardInfo();
+                 this.loadThreads();
+                 
+                 // Добавляем обработчик скролла для ленивой загрузки
+                 window.addEventListener('scroll', this.onScroll);
+               },
+               
+               beforeUnmount() {
+                 // Убираем обработчик скролла
+                 window.removeEventListener('scroll', this.onScroll);
+               },
               
               template: `
                 <div class="board-container">
@@ -929,8 +1014,8 @@
                     <button class="retry-button" @click="retryLoad">Повторить</button>
                   </div>
                   
-                                     <div v-else-if="threads.length > 0" class="threads-grid">
-                                          <div v-for="thread in threads" :key="thread.id" class="thread-card" @click="openThread(thread.id)">
+                                                        <div v-else-if="threads.length > 0" class="threads-grid">
+                     <div v-for="thread in threads" :key="thread.id" class="thread-card" @click="openThread(thread.id)">
                        <div class="thread-content">
                          <div v-if="thread.image" class="thread-image">
                            <img :src="thread.image" :alt="thread.title" loading="lazy">
@@ -956,7 +1041,20 @@
                          </div>
                        </div>
                      </div>
-                  </div>
+                     
+                     <!-- Индикатор загрузки дополнительных тредов -->
+                     <div v-if="loadingMore" class="loading-more">
+                       <div class="spinner small"></div>
+                       <span>Загружаем еще треды...</span>
+                     </div>
+                     
+                     <!-- Кнопка "Загрузить еще" если автоматическая загрузка не сработала -->
+                     <div v-if="hasMore && !loadingMore && threads.length > 0" class="load-more-button">
+                       <button @click="loadNextPage" class="load-more-btn">
+                         Загрузить еще треды
+                       </button>
+                     </div>
+                   </div>
                   
                   <div v-else class="error-message">
                     <div>Треды не найдены</div>
