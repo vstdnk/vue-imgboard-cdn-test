@@ -144,7 +144,7 @@
       .board-header {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 58px;
         margin-bottom: 24px;
         padding: 16px;
         background-color: var(--tg-theme-secondary-bg-color);
@@ -158,12 +158,14 @@
 
       .back-button {
         background: none;
-        border: none;
-        font-size: 24px;
+        border: 1px solid rgba(0,0,0,0.1);
+        font-size: 14px;
         color: var(--tg-theme-link-color);
         cursor: pointer;
         padding: 8px;
         border-radius: 8px;
+        margin-left: 38%;
+        margin-top: 8%;
         transition: background-color 0.2s ease;
       }
 
@@ -396,7 +398,7 @@
         .board-header {
           flex-direction: column;
           align-items: flex-start;
-          gap: 12px;
+          gap: 58px;
           padding: 12px;
         }
         
@@ -1012,7 +1014,7 @@
               template: `
                 <div class="board-container">
                   <div class="board-header">
-                    <button class="back-button" @click="goBack">Назад</button>
+                    <button class="back-button" @click="goBack">К списку досок</button>
                     <div class="board-info">
                       <div class="board-id">/{{ boardInfo?.id }}/</div>
                       <div class="board-name">{{ boardInfo?.name }}</div>
