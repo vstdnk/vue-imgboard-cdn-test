@@ -99,9 +99,12 @@
       #app {
         height: 100%;
         width: 100%;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         position: relative;
+        /* Разрешаем прокрутку свайпом */
+        touch-action: pan-y;
       }
       
       #app-loading {
@@ -256,26 +259,36 @@
         line-height: 1.4;
       }
 
-      /* Адаптивность для мобильных устройств */
-      @media (max-width: 768px) {
-        .boards-grid {
-          grid-template-columns: 1fr;
-        }
-        
-        .boards-container {
-          padding: 12px;
-        }
-        
-        .main-title {
-          font-size: 20px;
-          margin-bottom: 24px;
-        }
-        
-        .category-title {
-          font-size: 16px;
-          padding: 10px 14px;
-        }
-      }
+             /* Адаптивность для мобильных устройств */
+       @media (max-width: 768px) {
+         .boards-grid {
+           grid-template-columns: 1fr;
+         }
+         
+         .boards-container {
+           padding: 12px;
+         }
+         
+         .main-title {
+           font-size: 20px;
+           margin-bottom: 24px;
+         }
+         
+         .category-title {
+           font-size: 16px;
+           padding: 10px 14px;
+         }
+         
+         /* Улучшаем прокрутку на мобильных */
+         #app {
+           -webkit-overflow-scrolling: touch;
+           overscroll-behavior: contain;
+         }
+         
+         .boards-container {
+           overscroll-behavior: contain;
+         }
+       }
     </style>
   </head>
   <body>
@@ -308,10 +321,12 @@
           // Специальные настройки для iOS полноэкранного режима
           // Предотвращаем скроллинг страницы целиком на iOS
           document.addEventListener('touchmove', function(event) {
-            // Разрешаем скроллинг только внутри элементов с классом content
-            if (!event.target.closest('.content')) {
-              event.preventDefault();
+            // Разрешаем скроллинг внутри приложения
+            if (event.target.closest('#app') || event.target.closest('.boards-container')) {
+              return; // Разрешаем прокрутку
             }
+            // Блокируем прокрутку только для body
+            event.preventDefault();
           }, { passive: false });
         }
         
