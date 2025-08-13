@@ -342,18 +342,20 @@
          font-style: italic;
        }
        
-       .post-text .post-link {
-         color: var(--tg-theme-link-color);
-         text-decoration: none;
-         font-weight: bold;
-         background-color: rgba(38, 120, 182, 0.1);
-         padding: 2px 6px;
-         border-radius: 4px;
-         transition: all 0.2s ease;
-         cursor: pointer;
-         display: inline-block;
-         user-select: none;
-       }
+               .post-text .post-link {
+          color: var(--tg-theme-link-color);
+          text-decoration: none;
+          font-weight: bold;
+          background-color: rgba(38, 120, 182, 0.1);
+          padding: 2px 6px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          display: inline-block;
+          user-select: none;
+          position: relative;
+          z-index: 1;
+        }
        
        .post-text .post-link:hover {
          background-color: rgba(38, 120, 182, 0.2);
@@ -371,9 +373,29 @@
          text-decoration: none;
        }
        
-       .post-text .external-link:hover {
-         text-decoration: underline;
-       }
+               .post-text .external-link:hover {
+          text-decoration: underline;
+        }
+        
+        /* Стили для ссылок на ответы (если есть) */
+        .post-text .post-reply-link {
+          color: var(--tg-theme-link-color);
+          text-decoration: none;
+          font-weight: bold;
+          background-color: rgba(38, 120, 182, 0.05);
+          padding: 1px 4px;
+          border-radius: 3px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          display: inline-block;
+          user-select: none;
+          position: relative;
+          z-index: 0;
+        }
+        
+        .post-text .post-reply-link:hover {
+          background-color: rgba(38, 120, 182, 0.1);
+        }
 
       .post-files {
         display: flex;
@@ -617,14 +639,7 @@
           }
         }
         
-                 // Глобальная функция для обработки кликов по ссылкам на посты
-         window.handlePostClick = function(postNum) {
-           // Находим Vue приложение и вызываем метод
-           const app = document.querySelector('#app').__vue_app__;
-           if (app && app._instance && app._instance.proxy) {
-             app._instance.proxy.scrollToPost(postNum);
-           }
-         };
+        
          
          // Функция скрытия экрана загрузки
          window.hideLoading = function() {
@@ -707,7 +722,10 @@
                      this.hasMore = endIndex < this.allPosts.length;
                      this.loadingMore = false;
                      
-
+                     // Настраиваем ссылки для новых постов
+                     this.$nextTick(() => {
+                       this.setupPostLinks();
+                     });
                    }, 300);
                  },
                 
@@ -803,10 +821,10 @@
                    let processedText = text
                      // Заменяем <br> на переносы строк
                      .replace(/<br\s*\/?>/gi, '<br>')
-                     // Обрабатываем ссылки на посты (>>123456) - создаем span вместо a
-                     .replace(/>>(\d+)(?![^<]*>)/g, '<span class="post-link" data-post="$1" onclick="window.handlePostClick($1)">>>$1</span>')
+                     // Обрабатываем ссылки на посты (>>123456) - создаем span с data-атрибутом
+                     .replace(/>>(\d+)(?![^<]*>)/g, '<span class="post-link" data-post="$1">>>$1</span>')
                      // Обрабатываем ссылки на посты в формате >>123456 (с пробелами)
-                     .replace(/(?<!<[^>]*)(>>\s*(\d+))/g, '<span class="post-link" data-post="$2" onclick="window.handlePostClick($2)">>>$2</span>')
+                     .replace(/(?<!<[^>]*)(>>\s*(\d+))/g, '<span class="post-link" data-post="$2">>>$2</span>')
                      // Обрабатываем ссылки на треды
                      .replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi, '<a href="$1" target="_blank" class="external-link">$2</a>')
                      // Обрабатываем жирный текст
@@ -825,6 +843,29 @@
                      .replace(/<quote>([^<]+)<\/quote>/gi, '<blockquote class="post-quote">$1</blockquote>');
                    
                    return processedText;
+                 },
+                 
+                 setupPostLinks() {
+                   // Проверяем, не добавлен ли уже обработчик
+                   if (this.postLinksHandler) {
+                     document.removeEventListener('click', this.postLinksHandler);
+                   }
+                   
+                   // Создаем новый обработчик
+                   this.postLinksHandler = (e) => {
+                     if (e.target.classList.contains('post-link')) {
+                       e.preventDefault();
+                       e.stopPropagation();
+                       
+                       const postNum = e.target.getAttribute('data-post');
+                       if (postNum) {
+                         this.scrollToPost(postNum);
+                       }
+                     }
+                   };
+                   
+                   // Добавляем обработчик
+                   document.addEventListener('click', this.postLinksHandler);
                  },
                  
 
@@ -873,9 +914,28 @@
                  },
                  
                  async loadAllPosts() {
-                   // Загружаем все оставшиеся посты
-                   while (this.hasMore) {
-                     await this.loadNextPage();
+                   try {
+                     // Загружаем все оставшиеся посты
+                     let attempts = 0;
+                     const maxAttempts = 50; // Защита от бесконечного цикла
+                     
+                     while (this.hasMore && attempts < maxAttempts) {
+                       await this.loadNextPage();
+                       attempts++;
+                       
+                       // Небольшая задержка между загрузками
+                       if (this.hasMore) {
+                         await new Promise(resolve => setTimeout(resolve, 100));
+                       }
+                     }
+                     
+                     if (attempts >= maxAttempts) {
+                       console.warn('Достигнут лимит попыток загрузки постов');
+                       this.hasMore = false;
+                     }
+                   } catch (e) {
+                     console.error('Ошибка при загрузке всех постов:', e);
+                     this.hasMore = false;
                    }
                  },
                  
@@ -905,20 +965,31 @@
                  }
               },
               
-                             mounted() {
+                                            mounted() {
                  this.loadThreadInfo();
                  this.loadPosts();
                  
                  // Добавляем обработчик скролла для ленивой загрузки
                  window.addEventListener('scroll', this.onScroll);
                  
-
+                 // Добавляем обработчик кликов по ссылкам на посты
+                 this.$nextTick(() => {
+                   this.setupPostLinks();
+                 });
+                 
+                 // Сохраняем ссылку на Vue приложение глобально
+                 window.vueAppInstance = this;
                },
               
-              beforeUnmount() {
-                // Убираем обработчик скролла
-                window.removeEventListener('scroll', this.onScroll);
-              },
+                             beforeUnmount() {
+                 // Убираем обработчик скролла
+                 window.removeEventListener('scroll', this.onScroll);
+                 
+                 // Убираем обработчик кликов по ссылкам
+                 if (this.postLinksHandler) {
+                   document.removeEventListener('click', this.postLinksHandler);
+                 }
+               },
               
               template: `
                 <div class="thread-container">
