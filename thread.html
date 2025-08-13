@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <!-- Метатеги для iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="TG Imgboard">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2678b6">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <title>TG Imgboard - Тред</title>
+
+    <!-- Загружаем Telegram WebApp скрипт до основного приложения -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Загружаем Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Встроенные базовые стили -->
+    <style>
+      :root {
+        --tg-theme-bg-color: #ffffff;
+        --tg-theme-text-color: #222222;
+        --tg-theme-hint-color: #999999;
+        --tg-theme-link-color: #2678b6;
+        --tg-theme-button-color: #2678b6;
+        --tg-theme-button-text-color: #ffffff;
+        --tg-theme-secondary-bg-color: #f5f5f5;
+        --safe-area-inset-top: env(safe-area-inset-top, 0px);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      
+      html.dark {
+        --tg-theme-bg-color: #212121;
+        --tg-theme-text-color: #ffffff;
+        --tg-theme-hint-color: #aaaaaa;
+        --tg-theme-link-color: #8cc2ff;
+        --tg-theme-button-color: #2678b6;
+        --tg-theme-button-text-color: #ffffff;
+        --tg-theme-secondary-bg-color: #292929;
+      }
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      html, body {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: var(--tg-theme-bg-color);
+        color: var(--tg-theme-text-color);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+      }
+      
+      #app {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        touch-action: pan-y;
+      }
+      
+      #app-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--tg-theme-bg-color);
+        color: var(--tg-theme-text-color);
+        transition: opacity 0.3s;
+        z-index: 9999;
+      }
+      
+      #app-loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 20px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: var(--tg-theme-button-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      html.dark .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-left-color: var(--tg-theme-link-color);
+      }
+      
+      .loading-text {
+        font-size: 14px;
+        letter-spacing: 1px;
+        font-weight: bold;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Стили для постов */
+      .thread-container {
+        padding: 16px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .thread-header {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 120%;
+        z-index: 1000;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background-color: rgb(255, 255, 255);
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .thread-header {
+        border-color: rgba(255,255,255,0.1);
+        background-color: rgb(22, 22, 22);
+      }
+
+      .back-button {
+        background-color: rgba(121, 115, 115, 0.1);
+        border: 1px solid rgba(71, 49, 49, 0.1);
+        font-size: 14px;
+        font-weight: bold;
+        color: var(--tg-theme-text-color);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 18px;
+        margin-left: 26%;
+        margin-top: 8.5%;
+        transition: background-color 0.2s ease;
+      }
+
+      .back-button:hover {
+        background-color: rgba(0,0,0,0.1);
+      }
+
+      html.dark .back-button:hover {
+        background-color: rgba(255,255,255,0.1);
+      }
+
+      .thread-info {
+        flex: 1;
+      }
+
+      .thread-id {
+        font-family: monospace;
+        font-weight: bold;
+        color: var(--tg-theme-button-color);
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .thread-title {
+        font-weight: 600;
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      .thread-description {
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+        line-height: 1.4;
+      }
+
+      .posts-container {
+        display: flex;
+        flex-direction: column;
+        margin-top: 50%;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .post-card {
+        background-color: var(--tg-theme-bg-color);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        position: relative;
+        border: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .post-card {
+        background-color: var(--tg-theme-secondary-bg-color);
+        border-color: rgba(255,255,255,0.1);
+      }
+
+      .post-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(92, 89, 89, 0.1);
+        background-color: var(--tg-theme-secondary-bg-color);
+      }
+
+      html.dark .post-card:hover {
+        background-color: rgba(59, 58, 58, 0.1);
+      }
+
+      /* Разделители между постами */
+      .post-card:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 16px;
+        right: 16px;
+        height: 1px;
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+
+      html.dark .post-card:not(:last-child)::after {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .post-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+      }
+
+      .post-number {
+        font-weight: bold;
+        color: var(--tg-theme-button-color);
+      }
+
+      .post-date {
+        color: var(--tg-theme-hint-color);
+      }
+
+      .post-content {
+        margin-bottom: 12px;
+        line-height: 1.6;
+      }
+
+      .post-text {
+        margin-bottom: 12px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      .post-files {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .post-file {
+        max-width: 200px;
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: var(--tg-theme-secondary-bg-color);
+      }
+
+      .post-file img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .post-file video {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      .error-message {
+        text-align: center;
+        padding: 32px;
+        color: var(--tg-theme-hint-color);
+      }
+
+      .retry-button {
+        background-color: var(--tg-theme-button-color);
+        color: var(--tg-theme-button-text-color);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 16px;
+        transition: opacity 0.2s ease;
+      }
+
+      .retry-button:hover {
+        opacity: 0.8;
+      }
+
+      .loading-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 20px;
+        color: var(--tg-theme-hint-color);
+        font-size: 14px;
+      }
+
+      .spinner.small {
+        width: 20px;
+        height: 20px;
+        border-width: 2px;
+      }
+
+      .load-more-button {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .load-more-btn {
+        background-color: var(--tg-theme-button-color);
+        color: var(--tg-theme-button-text-color);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+      }
+
+      .load-more-btn:hover {
+        opacity: 0.8;
+      }
+
+      /* Адаптивность для мобильных устройств */
+      @media (max-width: 768px) {
+        .thread-container {
+          padding: 12px;
+        }
+        
+        .thread-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 12px;
+        }
+        
+        .posts-container {
+          padding: 12px;
+        }
+        
+        .post-card {
+          padding: 12px;
+        }
+        
+        .post-card:not(:last-child)::after {
+          left: 12px;
+          right: 12px;
+        }
+        
+        .post-files {
+          flex-direction: column;
+        }
+        
+        .post-file {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Базовый экран загрузки -->
+    <div id="app-loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Загрузка...</div>
+    </div>
+    
+    <!-- Контейнер для Vue приложения -->
+    <div id="app" style="display: none;"></div>
+
+    <script>
+      // Определяем iOS устройства
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      // Базовая проверка наличия Telegram WebApp API
+      window.addEventListener('DOMContentLoaded', function() {
+        // Элементы страницы
+        var appLoading = document.getElementById('app-loading');
+        var vueApp = document.getElementById('app');
+        var isAppHidden = false;
+        
+        // Получаем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const boardId = urlParams.get('board');
+        const threadId = urlParams.get('thread');
+        
+        if (!boardId || !threadId) {
+          // Если нет параметров, возвращаемся на главную
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Настраиваем для iOS
+        if (isIOS) {
+          document.body.classList.add('ios');
+          
+          // Предотвращаем скроллинг страницы целиком на iOS
+          document.addEventListener('touchmove', function(event) {
+            if (event.target.closest('#app') || event.target.closest('.thread-container')) {
+              return;
+            }
+            event.preventDefault();
+          }, { passive: false });
+        }
+        
+        // Инициализация Telegram API
+        var tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+          tg = window.Telegram.WebApp;
+          
+          // Отключаем свайп вниз для закрытия приложения
+          try {
+            if (window.Telegram && window.Telegram.WebApp) {
+              var eventData = JSON.stringify({ allow_vertical_swipe: false });
+              if (window.TelegramWebviewProxy) {
+                window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', eventData);
+              } else {
+                window.parent.postMessage(JSON.stringify({
+                  eventType: 'web_app_setup_swipe_behavior',
+                  eventData: { allow_vertical_swipe: false }
+                }), 'https://web.telegram.org');
+              }
+              console.log('Свайп вниз отключен');
+            }
+          } catch (e) {
+            console.error('Ошибка при отключении свайпа вниз:', e);
+          }
+          
+          // Скрываем кнопку "Назад" в левом верхнем углу
+          try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
+              window.Telegram.WebApp.BackButton.hide();
+              console.log('Кнопка "Назад" скрыта');
+            }
+          } catch (e) {
+            console.error('Ошибка при скрытии кнопки "Назад":', e);
+          }
+          
+          // Применяем темную тему если нужно
+          if (tg.colorScheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          
+          // Настройка переменных CSS на основе Telegram темы
+          if (tg.themeParams) {
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+          }
+        }
+        
+        // Функция скрытия экрана загрузки
+        window.hideLoading = function() {
+          if (isAppHidden) return;
+          isAppHidden = true;
+          
+          appLoading.classList.add('hidden');
+          
+          try {
+            // Инициализация Vue после DOMContentLoaded
+            const { createApp } = Vue;
+
+            createApp({
+              data() {
+                return {
+                  boardId: boardId,
+                  threadId: threadId,
+                  threadInfo: null,
+                  posts: [],
+                  allPosts: [],
+                  loading: false,
+                  error: null,
+                  page: 1,
+                  postsPerPage: 20,
+                  hasMore: true,
+                  loadingMore: false
+                };
+              },
+              methods: {
+                async loadThreadInfo() {
+                  try {
+                    // Здесь можно загрузить информацию о треде
+                    // Пока используем заглушку
+                    this.threadInfo = {
+                      id: this.threadId,
+                      boardId: this.boardId,
+                      title: `Тред #${this.threadId}`,
+                      description: `Обсуждение в треде #${this.threadId}`
+                    };
+                  } catch (e) {
+                    console.error('Ошибка при загрузке информации о треде:', e);
+                  }
+                },
+                
+                async loadPosts() {
+                  this.loading = true;
+                  this.error = null;
+                  this.page = 1;
+                  
+                  try {
+                    // Загружаем все посты
+                    const allPosts = await this.fetchPosts();
+                    this.allPosts = allPosts;
+                    
+                    // Показываем первую страницу
+                    this.loadNextPage();
+                  } catch (e) {
+                    console.error('Ошибка при загрузке постов:', e);
+                    this.error = 'Не удалось загрузить посты. Возможно, проблема с CORS.';
+                  } finally {
+                    this.loading = false;
+                  }
+                },
+                
+                loadNextPage() {
+                  if (!this.hasMore || this.loadingMore) return;
+                  
+                  this.loadingMore = true;
+                  
+                  // Имитируем задержку для плавности
+                  setTimeout(() => {
+                    const startIndex = (this.page - 1) * this.postsPerPage;
+                    const endIndex = startIndex + this.postsPerPage;
+                    const newPosts = this.allPosts.slice(startIndex, endIndex);
+                    
+                    this.posts.push(...newPosts);
+                    this.page++;
+                    
+                    // Проверяем, есть ли еще посты
+                    this.hasMore = endIndex < this.allPosts.length;
+                    this.loadingMore = false;
+                  }, 300);
+                },
+                
+                onScroll() {
+                  // Проверяем, достигли ли конца списка
+                  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                  const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+                  const clientHeight = document.documentElement.clientHeight || window.innerHeight;
+                  
+                  if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    this.loadNextPage();
+                  }
+                },
+                
+                async fetchPosts() {
+                  // Используем codetabs прокси для обхода CORS
+                  const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=https://2ch.hk/${this.boardId}/res/${this.threadId}.json`;
+                  
+                  try {
+                    console.log('Загружаем посты через codetabs прокси...');
+                    const response = await fetch(proxyUrl, {
+                      method: 'GET',
+                      headers: {
+                        'Accept': 'application/json'
+                      }
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      console.log('Посты получены через codetabs:', data);
+                      return this.parsePosts(data);
+                    } else {
+                      throw new Error(`HTTP ${response.status}`);
+                    }
+                  } catch (e) {
+                    console.error('Ошибка загрузки постов через codetabs:', e);
+                    throw new Error('Не удалось загрузить посты через codetabs прокси');
+                  }
+                },
+                
+                parsePosts(data) {
+                  if (data.threads && data.threads[0] && data.threads[0].posts) {
+                    return data.threads[0].posts.map(post => ({
+                      id: post.num,
+                      date: post.date * 1000,
+                      text: post.comment || '',
+                      files: post.files || [],
+                      subject: post.subject || ''
+                    }));
+                  }
+                  
+                  return [];
+                },
+                
+                formatTimestamp(timestamp) {
+                  if (!timestamp || timestamp === 0) return 'Неизвестно';
+                  
+                  let date;
+                  
+                  // Пробуем разные форматы timestamp
+                  if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                  } else if (timestamp < 10000000000) {
+                    date = new Date(timestamp * 1000);
+                  } else {
+                    date = new Date(timestamp);
+                  }
+                  
+                  if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+                    date = new Date();
+                  }
+                  
+                  // Форматируем дату в формате дд.мм.гг
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                  const year = date.getFullYear().toString().slice(-2);
+                  
+                  return `${day}.${month}.${year}`;
+                },
+                
+                goBack() {
+                  window.location.href = `board.html?id=${this.boardId}`;
+                },
+                
+                retryLoad() {
+                  this.loadPosts();
+                }
+              },
+              
+              mounted() {
+                this.loadThreadInfo();
+                this.loadPosts();
+                
+                // Добавляем обработчик скролла для ленивой загрузки
+                window.addEventListener('scroll', this.onScroll);
+              },
+              
+              beforeUnmount() {
+                // Убираем обработчик скролла
+                window.removeEventListener('scroll', this.onScroll);
+              },
+              
+              template: `
+                <div class="thread-container">
+                  <div class="thread-header">
+                    <button class="back-button" @click="goBack">К списку тредов</button>
+                    <div class="thread-info">
+                      <div class="thread-id">/{{ boardId }}/#{{ threadId }}</div>
+                      <div class="thread-title">{{ threadInfo?.title }}</div>
+                      <div class="thread-description" v-if="threadInfo?.description">{{ threadInfo.description }}</div>
+                    </div>
+                  </div>
+                  
+                  <div v-if="loading" class="error-message">
+                    <div class="spinner"></div>
+                    <div>Загрузка...</div>
+                  </div>
+                  
+                  <div v-else-if="error" class="error-message">
+                    <div>{{ error }}</div>
+                    <button class="retry-button" @click="retryLoad">Повторить</button>
+                  </div>
+                  
+                  <div v-else-if="posts.length > 0" class="posts-container">
+                    <div v-for="post in posts" :key="post.id" class="post-card">
+                      <div class="post-header">
+                        <span class="post-number">#{{ post.id }}</span>
+                        <span class="post-date">{{ formatTimestamp(post.date) }}</span>
+                      </div>
+                      
+                      <div class="post-content">
+                        <div v-if="post.subject" class="post-subject" style="font-weight: bold; margin-bottom: 8px;">
+                          {{ post.subject }}
+                        </div>
+                        <div v-if="post.text" class="post-text">{{ post.text }}</div>
+                        
+                        <div v-if="post.files && post.files.length > 0" class="post-files">
+                          <div v-for="file in post.files" :key="file.path" class="post-file">
+                            <img v-if="file.type === 0" :src="'https://2ch.hk' + file.path" :alt="file.name" loading="lazy">
+                            <video v-else-if="file.type === 1" :src="'https://2ch.hk' + file.path" controls preload="metadata"></video>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Индикатор загрузки дополнительных постов -->
+                    <div v-if="loadingMore" class="loading-more">
+                      <div class="spinner small"></div>
+                      <span>Загружаем еще посты...</span>
+                    </div>
+                    
+                    <!-- Кнопка "Загрузить еще" если автоматическая загрузка не сработала -->
+                    <div v-if="hasMore && !loadingMore && posts.length > 0" class="load-more-button">
+                      <button @click="loadNextPage" class="load-more-btn">
+                        Загрузить еще посты
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div v-else class="error-message">
+                    <div>Посты не найдены</div>
+                    <button class="retry-button" @click="retryLoad">Повторить</button>
+                  </div>
+                </div>
+              `
+            }).mount('#app');
+
+            // Показываем приложение
+            appLoading.style.display = 'none';
+            vueApp.style.display = 'block';
+          } catch (e) {
+            console.error('Ошибка при инициализации Vue:', e);
+          }
+        };
+        
+        // Инициализация Telegram WebApp и автоматическое скрытие экрана загрузки
+        setTimeout(function() {
+          if (window.Telegram && window.Telegram.WebApp) {
+            try {
+              // Сообщаем Telegram что приложение готово
+              window.Telegram.WebApp.ready();
+              window.Telegram.WebApp.expand();
+              
+              // Принудительно устанавливаем полноэкранный режим
+              document.documentElement.style.height = '100%';
+              document.body.style.height = '100%';
+            } catch (e) {
+              console.error('Ошибка при инициализации Telegram WebApp:', e);
+            }
+          }
+          
+          // Принудительно скрываем экран загрузки
+          setTimeout(function() {
+            window.hideLoading();
+          }, isIOS ? 1000 : 500);
+        }, 100);
+        
+        // Дополнительная защита: скрываем экран загрузки при загрузке страницы
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            window.hideLoading();
+          }, 500);
+        });
+      });
+    </script>
+  </body>
+</html>

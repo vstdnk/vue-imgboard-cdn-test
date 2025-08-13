@@ -453,7 +453,7 @@
     <!-- Базовый экран загрузки -->
     <div id="app-loading">
       <div class="spinner"></div>
-      <div class="loading-text">THREADS LOADING...</div>
+      <div class="loading-text">Загрузка...</div>
     </div>
     
     <!-- Контейнер для Vue приложения -->
@@ -969,8 +969,16 @@
                 },
                 
                 openThread(threadId) {
-                  // Открываем тред (можно реализовать позже)
-                  console.log('Открываем тред:', threadId);
+                  // Открываем тред в новой странице
+                  const threadUrl = `thread.html?board=${this.boardId}&thread=${threadId}`;
+                  
+                  if (window.Telegram && window.Telegram.WebApp) {
+                    // В Telegram WebApp используем assign
+                    window.location.assign(threadUrl);
+                  } else {
+                    // В обычном браузере используем href
+                    window.location.href = threadUrl;
+                  }
                 },
                 
                 retryLoad() {
