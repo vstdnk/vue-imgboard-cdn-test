@@ -128,9 +128,15 @@
         font-weight: bold;
       }
       
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
+             @keyframes spin {
+         to { transform: rotate(360deg); }
+       }
+       
+       @keyframes pulse {
+         0% { transform: scale(1); }
+         50% { transform: scale(1.02); }
+         100% { transform: scale(1); }
+       }
 
       /* Стили для постов */
       .thread-container {
@@ -340,10 +346,23 @@
          color: var(--tg-theme-link-color);
          text-decoration: none;
          font-weight: bold;
+         background-color: rgba(38, 120, 182, 0.1);
+         padding: 2px 6px;
+         border-radius: 4px;
+         transition: all 0.2s ease;
+         cursor: pointer;
+         display: inline-block;
        }
        
        .post-text .post-link:hover {
-         text-decoration: underline;
+         background-color: rgba(38, 120, 182, 0.2);
+         transform: translateY(-1px);
+         box-shadow: 0 2px 4px rgba(38, 120, 182, 0.2);
+       }
+       
+       .post-text .post-link:active {
+         transform: translateY(0);
+         box-shadow: 0 1px 2px rgba(38, 120, 182, 0.2);
        }
        
        .post-text .external-link {
@@ -436,9 +455,35 @@
         transition: opacity 0.2s ease;
       }
 
-      .load-more-btn:hover {
-        opacity: 0.8;
-      }
+             .load-more-btn:hover {
+         opacity: 0.8;
+       }
+       
+       /* Уведомления */
+       .post-notification {
+         position: fixed;
+         top: 20px;
+         left: 50%;
+         transform: translateX(-50%) translateY(-100px);
+         background-color: var(--tg-theme-button-color);
+         color: var(--tg-theme-button-text-color);
+         padding: 12px 20px;
+         border-radius: 8px;
+         font-size: 14px;
+         font-weight: 500;
+         z-index: 10000;
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+         transition: transform 0.3s ease;
+         pointer-events: none;
+       }
+       
+       .post-notification.show {
+         transform: translateX(-50%) translateY(0);
+       }
+       
+       html.dark .post-notification {
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+       }
 
       /* Адаптивность для мобильных устройств */
       @media (max-width: 768px) {
@@ -751,8 +796,10 @@
                    let processedText = text
                      // Заменяем <br> на переносы строк
                      .replace(/<br\s*\/?>/gi, '<br>')
-                     // Обрабатываем ссылки на посты (>>123456)
-                     .replace(/>>(\d+)/g, '<a href="#" class="post-link" data-post="$1">>>$1</a>')
+                     // Обрабатываем ссылки на посты (>>123456) - более точный regex
+                     .replace(/>>(\d+)(?![^<]*>)/g, '<a href="#" class="post-link" data-post="$1">>>$1</a>')
+                     // Обрабатываем ссылки на посты в формате >>123456 (с пробелами)
+                     .replace(/(?<!<[^>]*)(>>\s*(\d+))/g, '<a href="#" class="post-link" data-post="$2">>>$2</a>')
                      // Обрабатываем ссылки на треды
                      .replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi, '<a href="$1" target="_blank" class="external-link">$2</a>')
                      // Обрабатываем жирный текст
@@ -789,12 +836,27 @@
                    // Ищем пост с указанным номером
                    const postElement = document.querySelector(`[data-post-id="${postNum}"]`);
                    if (postElement) {
+                     // Плавная прокрутка к посту
                      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                     // Добавляем подсветку
-                     postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.1)';
+                     
+                     // Добавляем подсветку поста
+                     postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.15)';
+                     postElement.style.border = '2px solid var(--tg-theme-button-color)';
+                     
+                     // Убираем подсветку через 3 секунды
                      setTimeout(() => {
                        postElement.style.backgroundColor = '';
-                     }, 2000);
+                       postElement.style.border = '';
+                     }, 3000);
+                     
+                     // Добавляем анимацию пульсации
+                     postElement.style.animation = 'pulse 0.6s ease-in-out';
+                     setTimeout(() => {
+                       postElement.style.animation = '';
+                     }, 600);
+                     
+                     // Показываем уведомление
+                     this.showNotification(`Переход к посту #${postNum}`);
                    } else {
                      // Если пост еще не загружен, загружаем его
                      this.loadPostAndScroll(postNum);
@@ -818,6 +880,31 @@
                    while (this.hasMore) {
                      await this.loadNextPage();
                    }
+                 },
+                 
+                 showNotification(message) {
+                   // Создаем элемент уведомления
+                   const notification = document.createElement('div');
+                   notification.className = 'post-notification';
+                   notification.textContent = message;
+                   
+                   // Добавляем в DOM
+                   document.body.appendChild(notification);
+                   
+                   // Показываем уведомление
+                   setTimeout(() => {
+                     notification.classList.add('show');
+                   }, 100);
+                   
+                   // Скрываем через 3 секунды
+                   setTimeout(() => {
+                     notification.classList.remove('show');
+                     setTimeout(() => {
+                       if (notification.parentNode) {
+                         notification.parentNode.removeChild(notification);
+                       }
+                     }, 300);
+                   }, 3000);
                  }
               },
               
