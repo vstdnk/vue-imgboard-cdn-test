@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Telegram Mini App Template</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      overflow: hidden; /* Предотвращаем скроллинг тела по умолчанию */
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .label {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .content {
+      overflow-y: auto; /* Разрешаем скроллинг внутри .content, если нужно */
+      max-height: 100vh;
+    }
+    .ios .content {
+      /* Дополнительные стили для iOS, если требуется */
+    }
+    /* Скрываем элементы загрузки и базового приложения, если они не нужны */
+    #app-loading, #basic-app {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-loading">Loading...</div>
+  <div id="basic-app"></div>
+  <div id="app" class="content">
+    <!-- Vue будет рендерить здесь -->
+  </div>
+
+  <script>
+    // Определяем iOS устройства
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Базовая проверка наличия Telegram WebApp API
+    window.addEventListener('DOMContentLoaded', function() {
+      // Элементы страницы
+      var appLoading = document.getElementById('app-loading');
+      var basicApp = document.getElementById('basic-app');
+      var vueApp = document.getElementById('app');
+      var isAppHidden = false;
+
+      // Настраиваем для iOS
+      if (isIOS) {
+        document.body.classList.add('ios');
+
+        // Специальные настройки для iOS полноэкранного режима
+        // Предотвращаем скроллинг страницы целиком на iOS
+        document.addEventListener('touchmove', function(event) {
+          // Разрешаем скроллинг только внутри элементов с классом content
+          if (!event.target.closest('.content')) {
+            event.preventDefault();
+          }
+        }, { passive: false });
+      }
+
+      // Инициализация Vue после DOMContentLoaded
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            message: 'Hello, Telegram Mini App!'
+          };
+        },
+        methods: {
+          handleClick() {
+            alert('Button clicked!');
+            // Здесь можно интегрировать Telegram WebApp API, например:
+            // if (window.Telegram && window.Telegram.WebApp) {
+            //   window.Telegram.WebApp.showAlert('Button clicked!');
+            // }
+          }
+        },
+        template: `
+          <div>
+            <div class="label">{{ message }}</div>
+            <button class="button" @click="handleClick">Click Me</button>
+          </div>
+        `
+      }).mount('#app');
+
+      // Если нужно показать/скрыть элементы
+      appLoading.style.display = 'none';
+      vueApp.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
