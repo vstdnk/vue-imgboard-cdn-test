@@ -148,145 +148,7 @@
         to { transform: rotate(360deg); }
       }
       
-      /* Стили для базового интерфейса */
-      .header {
-        background-color: var(--tg-theme-secondary-bg-color);
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: relative;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding-top: calc(16px + var(--safe-area-inset-top));
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
-      }
-      
-      /* Специальные отступы для iOS в полноэкранном режиме */
-      body.ios-fullscreen .header {
-        padding-top: calc(16px + env(safe-area-inset-top, 20px));
-      }
-      
-      .header h1 {
-        font-size: 18px;
-        font-weight: bold;
-        flex-grow: 1;
-        text-align: center;
-      }
-      
-      /* Специфичные для iOS стили */
-      @supports (-webkit-touch-callout: none) {
-        .content {
-          padding: 0;
-          height: calc(100vh - 49px - env(safe-area-inset-top, 0px));
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-          position: relative;
-          z-index: 1;
-        }
-        
-        /* Для iOS в полноэкранном режиме */
-        body.ios-fullscreen .content {
-          height: calc(100vh - 49px - env(safe-area-inset-top, 20px) - env(safe-area-inset-bottom, 20px));
-        }
-      }
-      
-      /* Стили для других платформ */
-      @supports not (-webkit-touch-callout: none) {
-        .content {
-          padding: 0;
-          height: calc(100% - 49px - var(--safe-area-inset-top));
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-      }
-      
-      /* Стили для списка досок */
-      .boards-list {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 0;
-      }
-      
-      .board-item {
-        padding: 14px 16px;
-        font-size: 16px;
-        font-weight: 400;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        text-align: left;
-        color: var(--tg-theme-text-color);
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        position: relative;
-      }
-      
-      html.dark .board-item {
-        border-bottom-color: rgba(255,255,255,0.05);
-      }
-      
-      .board-item:last-child {
-        border-bottom: none;
-      }
-      
-      .board-item:active {
-        background-color: rgba(0,0,0,0.05);
-      }
-      
-      html.dark .board-item:active {
-        background-color: rgba(255,255,255,0.05);
-      }
-      
-      .board-item:after {
-        content: '›';
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 20px;
-        color: var(--tg-theme-hint-color);
-      }
-      
-      .board-name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: block;
-        padding-right: 20px;
-      }
-      
-      /* Улучшенные стили для секций */
-      .section {
-        margin-bottom: 24px;
-      }
-      
-      .section-title {
-        font-size: 15px;
-        font-weight: 500;
-        margin: 16px 16px 8px;
-        color: var(--tg-theme-hint-color);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      
-      .section-content {
-        background-color: var(--tg-theme-secondary-bg-color);
-        border-radius: 10px;
-        overflow: hidden;
-        margin: 0 16px;
-      }
-      
-      /* Стили для приветственного текста */
-      .welcome-text {
-        margin: 20px 16px;
-        font-size: 18px;
-        text-align: center;
-        color: var(--tg-theme-text-color);
-        font-weight: 500;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-      }
+
       
       /* Индикатор загрузки */
       .loader {
@@ -303,6 +165,114 @@
         border-color: rgba(255,255,255,0.1);
         border-top-color: var(--tg-theme-button-color);
       }
+
+      /* Стили для досок */
+      .boards-container {
+        padding: 16px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .main-title {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 32px;
+        color: var(--tg-theme-text-color);
+      }
+
+      .category-section {
+        margin-bottom: 32px;
+      }
+
+      .category-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        background-color: var(--tg-theme-secondary-bg-color);
+        border-radius: 8px;
+        color: var(--tg-theme-text-color);
+        border-left: 4px solid var(--tg-theme-button-color);
+      }
+
+      .boards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .board-card {
+        background-color: var(--tg-theme-secondary-bg-color);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .board-card {
+        border-color: rgba(255,255,255,0.1);
+      }
+
+      .board-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+
+      .board-header {
+        margin-bottom: 8px;
+      }
+
+      .board-link {
+        text-decoration: none;
+        color: var(--tg-theme-text-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .board-link:hover {
+        color: var(--tg-theme-link-color);
+      }
+
+      .board-id {
+        font-family: monospace;
+        font-weight: bold;
+        color: var(--tg-theme-button-color);
+        font-size: 14px;
+      }
+
+      .board-name {
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      .board-info {
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+        line-height: 1.4;
+      }
+
+      /* Адаптивность для мобильных устройств */
+      @media (max-width: 768px) {
+        .boards-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .boards-container {
+          padding: 12px;
+        }
+        
+        .main-title {
+          font-size: 20px;
+          margin-bottom: 24px;
+        }
+        
+        .category-title {
+          font-size: 16px;
+          padding: 10px 14px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -312,23 +282,7 @@
       <div class="loading-text">BOARD LOADING...</div>
     </div>
     
-    <!-- Базовый интерфейс приложения - будет виден даже без Vue -->
-    <div id="basic-app" style="display: none; height: 100%; overflow: hidden;">
-      <div class="header">
-        <h1>2ch Boards</h1>
-      </div>
-      
-      <div class="content">
-        <p class="welcome-text">
-          Загрузка списка досок...
-        </p>
-        
-        <!-- Контейнер для динамических секций -->
-        <div id="boards-container">
-          <!-- Сюда будут добавлены секции с досками -->
-        </div>
-      </div>
-    </div>
+
     
     <!-- Контейнер для Vue приложения -->
     <div id="app" style="display: none;"></div>
@@ -341,7 +295,6 @@
       window.addEventListener('DOMContentLoaded', function() {
         // Элементы страницы
         var appLoading = document.getElementById('app-loading');
-        var basicApp = document.getElementById('basic-app');
         var vueApp = document.getElementById('app');
         var isAppHidden = false;
         
@@ -516,143 +469,6 @@
               if (event.persisted) setTimeout(activateFullScreenMode, 300);
             });
           }
-          
-          // Загрузка данных о досках
-          function loadBoards() {
-            var welcomeText = document.querySelector('.welcome-text');
-            var boardsContainer = document.getElementById('boards-container');
-            
-            // Показываем индикатор загрузки
-            welcomeText.innerHTML = 'Загрузка списка досок... <div class="loader"></div>';
-            
-            // Функция для создания секции с досками
-            function createBoardSection(category, boards) {
-              var section = document.createElement('div');
-              section.className = 'section';
-              
-              var title = document.createElement('div');
-              title.className = 'section-title';
-              title.textContent = category;
-              section.appendChild(title);
-              
-              var content = document.createElement('div');
-              content.className = 'section-content';
-              
-              // Создаем список досок
-              var boardsList = document.createElement('div');
-              boardsList.className = 'boards-list';
-              
-              boards.forEach(function(board) {
-                var boardItem = document.createElement('div');
-                boardItem.className = 'board-item';
-                boardItem.setAttribute('data-id', board.id);
-                
-                var boardName = document.createElement('span');
-                boardName.className = 'board-name';
-                boardName.textContent = '/' + board.id + '/ - ' + board.name;
-                
-                boardItem.appendChild(boardName);
-                boardsList.appendChild(boardItem);
-                
-                // Добавляем обработчик клика
-                boardItem.addEventListener('click', function() {
-                  var boardId = this.getAttribute('data-id');
-                  var boardName = this.querySelector('.board-name').textContent;
-                  
-                  // Сохраняем информацию о доске в localStorage
-                  localStorage.setItem('boardInfo_' + boardId, JSON.stringify({
-                    id: boardId,
-                    name: boardName
-                  }));
-                  
-                  // Показываем небольшую анимацию нажатия
-                  this.style.backgroundColor = 'rgba(0,0,0,0.05)';
-                  setTimeout(() => {
-                    this.style.backgroundColor = '';
-                    // Переходим на страницу доски в нашем приложении
-                    window.location.href = '#/board/' + boardId;
-                  }, 150);
-                });
-              });
-              
-              content.appendChild(boardsList);
-              section.appendChild(content);
-              
-              return section;
-            }
-            
-            // Загружаем данные из локального JSON файла
-            fetch('./boards.json')
-              .then(function(response) {
-                if (!response.ok) {
-                  throw new Error('Ошибка загрузки данных: ' + response.status);
-                }
-                return response.json();
-              })
-              .then(function(data) {
-                // Очищаем текст загрузки
-                welcomeText.textContent = 'Выберите доску:';
-                
-                // Группируем доски по категориям
-                var categories = {};
-                
-                data.boards.forEach(function(board) {
-                  var category = board.category;
-                  if (!categories[category]) {
-                    categories[category] = [];
-                  }
-                  categories[category].push(board);
-                });
-                
-                // Сортируем категории в определенном порядке
-                var categoryOrder = [
-                  "Тематика", 
-                  "Японская культура", 
-                  "Технологии", 
-                  "Творчество", 
-                  "Развлечения", 
-                  "Медиа", 
-                  "Политика", 
-                  "Разное", 
-                  "Взрослый контент"
-                ];
-                
-                // Сортируем доски внутри категорий по алфавиту
-                for (var category in categories) {
-                  if (categories.hasOwnProperty(category)) {
-                    categories[category].sort(function(a, b) {
-                      return a.name.localeCompare(b.name, 'ru');
-                    });
-                  }
-                }
-                
-                // Создаем секции в нужном порядке
-                categoryOrder.forEach(function(category) {
-                  if (categories[category]) {
-                    var section = createBoardSection(category, categories[category]);
-                    boardsContainer.appendChild(section);
-                  }
-                });
-                
-                // Скрываем экран загрузки
-                setTimeout(function() {
-                  window.hideLoading();
-                }, 300);
-              })
-              .catch(function(error) {
-                console.error('Ошибка при загрузке досок:', error);
-                welcomeText.innerHTML = 'Ошибка при загрузке досок.<br>Попробуйте позже.';
-                
-                // Скрываем экран загрузки даже при ошибке
-                setTimeout(function() {
-                  window.hideLoading();
-                }, 300);
-              });
-          }
-          
-          // Запускаем загрузку досок
-          loadBoards();
-        }
         
         // Функция скрытия экрана загрузки
         window.hideLoading = function() {
@@ -662,33 +478,821 @@
           // Скрываем экран загрузки
           appLoading.classList.add('hidden');
           
-          // Показываем базовый интерфейс
-          basicApp.style.display = 'block';
+
           
           try {
-            // Пытаемся монтировать Vue приложение с задержкой
-            setTimeout(function() {
-              vueApp.style.display = 'block';
-              
-              // iOS-специфичная подстройка скролла
-              if (isIOS) {
-                // Иногда для iOS требуется принудительно обновить область прокрутки
-                var content = document.querySelector('.content');
-                if (content) {
-                  content.style.overflow = 'hidden';
-                  setTimeout(function() {
-                    content.style.overflow = 'auto';
-                  }, 50);
+            // Инициализация Vue после DOMContentLoaded
+            const { createApp } = Vue;
+
+            createApp({
+              data() {
+                return {
+                  boards: [
+                    {
+                      id: "a",
+                      name: "Аниме",
+                      category: "Японская культура",
+                      info_outer: "аниме, 2d, вайфу",
+                      link: "/a/"
+                    },
+                    {
+                      id: "b",
+                      name: "Бред",
+                      category: "Разное",
+                      info_outer: "бред",
+                      link: "/b/"
+                    },
+                    {
+                      id: "bi",
+                      name: "Велосипеды",
+                      category: "Тематика",
+                      info_outer: "велосипеды, dmx",
+                      link: "/bi/"
+                    },
+                    {
+                      id: "biz",
+                      name: "Бизнес",
+                      category: "Тематика",
+                      info_outer: "бизнес, сириуз бизнес",
+                      link: "/biz/"
+                    },
+                    {
+                      id: "bo",
+                      name: "Книги",
+                      category: "Тематика",
+                      info_outer: "книги, чтение",
+                      link: "/bo/"
+                    },
+                    {
+                      id: "c",
+                      name: "Комиксы и мультфильмы",
+                      category: "Тематика",
+                      info_outer: "комиксы, мультфильмы",
+                      link: "/c/"
+                    },
+                    {
+                      id: "dev",
+                      name: "Тянач",
+                      category: "",
+                      info_outer: "",
+                      link: "/dev/"
+                    },
+                    {
+                      id: "em",
+                      name: "Другие страны",
+                      category: "Тематика",
+                      info_outer: "эмиграция, страны",
+                      link: "/em/"
+                    },
+                    {
+                      id: "ew",
+                      name: "Конец света",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/ew/"
+                    },
+                    {
+                      id: "fa",
+                      name: "Мода и стиль",
+                      category: "Тематика",
+                      info_outer: "мода, стиль, шмотки, стрижки, партаки, рюкзаки, парфюм, патлы",
+                      link: "/fa/"
+                    },
+                    {
+                      id: "fiz",
+                      name: "Физкультура",
+                      category: "Тематика",
+                      info_outer: "физкультура, здоровье, сбросить вес, набрать вес, бицуха",
+                      link: "/fiz/"
+                    },
+                    {
+                      id: "fl",
+                      name: "Иностранные языки",
+                      category: "Тематика",
+                      info_outer: "иностранные языки, мунспик, эльфийский",
+                      link: "/fl/"
+                    },
+                    {
+                      id: "ftb",
+                      name: "Футбол",
+                      category: "Тематика",
+                      info_outer: "футбол, премьер лига, ногомяч",
+                      link: "/ftb/"
+                    },
+                    {
+                      id: "hh",
+                      name: "Hip-Hop",
+                      category: "Пользовательские",
+                      info_outer: "хипхоп, рэп, олдскул",
+                      link: "/hh/"
+                    },
+                    {
+                      id: "hi",
+                      name: "История",
+                      category: "Тематика",
+                      info_outer: "история",
+                      link: "/hi/"
+                    },
+                    {
+                      id: "hw",
+                      name: "Железо и Техника",
+                      category: "Техника и софт",
+                      info_outer: "железо, видеокарты, ноутбуки, intel, amd, nvidia, ati",
+                      link: "/hw/"
+                    },
+                    {
+                      id: "me",
+                      name: "Медицина",
+                      category: "Тематика",
+                      info_outer: "медицина, здоровье, диагностика, сходи к врачу",
+                      link: "/me/"
+                    },
+                    {
+                      id: "mg",
+                      name: "Магия",
+                      category: "Тематика",
+                      info_outer: "магия, астрал, вуду, руны, псионика, суккубы",
+                      link: "/mg/"
+                    },
+                    {
+                      id: "mlp",
+                      name: "My Little Pony",
+                      category: "Тематика",
+                      info_outer: "Мои маленькие пони, дружба, магия",
+                      link: "/mlp/"
+                    },
+                    {
+                      id: "mo",
+                      name: "Мотоциклы",
+                      category: "Тематика",
+                      info_outer: "Мотоциклы, скутеры, трайки, экипировка",
+                      link: "/mo/"
+                    },
+                    {
+                      id: "ne",
+                      name: "Животные и природа",
+                      category: "Тематика",
+                      info_outer: "",
+                      link: "/ne/"
+                    },
+                    {
+                      id: "pvc",
+                      name: "Фигурки",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/pvc/"
+                    },
+                    {
+                      id: "ph",
+                      name: "Философия",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/ph/"
+                    },
+                    {
+                      id: "po",
+                      name: "Политика",
+                      category: "Политика",
+                      info_outer: "политика, новости, ольгинцы, хохлы, либерахи, рептилоиды.. oh shi",
+                      link: "/po/"
+                    },
+                    {
+                      id: "pr",
+                      name: "Программирование",
+                      category: "Техника и софт",
+                      info_outer: "программирование, быдлокодинг",
+                      link: "/pr/"
+                    },
+                    {
+                      id: "psy",
+                      name: "Психология и психиатрия",
+                      category: "Тематика",
+                      info_outer: "психология, психиатрия",
+                      link: "/psy/"
+                    },
+                    {
+                      id: "ra",
+                      name: "Радиотехника",
+                      category: "Тематика",
+                      info_outer: "радиолюбители, связь, радиотехника",
+                      link: "/ra/"
+                    },
+                    {
+                      id: "re",
+                      name: "Религия",
+                      category: "Тематика",
+                      info_outer: "религия, религиозная философия",
+                      link: "/re/"
+                    },
+                    {
+                      id: "s",
+                      name: "Программы",
+                      category: "Техника и софт",
+                      info_outer: "linux, windows, шиндовс, программы",
+                      link: "/s/"
+                    },
+                    {
+                      id: "sf",
+                      name: "Научная фантастика",
+                      category: "Тематика",
+                      info_outer: "научная фантастика, science fiction, sci-fi",
+                      link: "/sf/"
+                    },
+                    {
+                      id: "sci",
+                      name: "Наука",
+                      category: "Тематика",
+                      info_outer: "наука",
+                      link: "/sci/"
+                    },
+                    {
+                      id: "sn",
+                      name: "Паранормальные явления",
+                      category: "Тематика",
+                      info_outer: "крипи, паранормальные явления",
+                      link: "/sn/"
+                    },
+                    {
+                      id: "sp",
+                      name: "Спорт",
+                      category: "Тематика",
+                      info_outer: "спорт, спортивные игры, футбол в /ftb/",
+                      link: "/sp/"
+                    },
+                    {
+                      id: "spc",
+                      name: "Космос и астрономия",
+                      category: "Тематика",
+                      info_outer: "космос, астрономия, вселенные, звезды, огурцы",
+                      link: "/spc/"
+                    },
+                    {
+                      id: "t",
+                      name: "Техника",
+                      category: "Пользовательские",
+                      info_outer: "техника, технологии, компьютерная периферия",
+                      link: "/t/"
+                    },
+                    {
+                      id: "tr",
+                      name: "Транспорт и авиация",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/tr/"
+                    },
+                    {
+                      id: "tv",
+                      name: "Сериалы",
+                      category: "Тематика",
+                      info_outer: "сериалы для домохозяек",
+                      link: "/tv/"
+                    },
+                    {
+                      id: "un",
+                      name: "Образование",
+                      category: "Тематика",
+                      info_outer: "образование, вуз, школа, поступление, гиа, егэ, уже не школьник",
+                      link: "/un/"
+                    },
+                    {
+                      id: "w",
+                      name: "Оружие",
+                      category: "Тематика",
+                      info_outer: "оружие, ножи, стволы",
+                      link: "/w/"
+                    },
+                    {
+                      id: "wh",
+                      name: "Warhammer",
+                      category: "Тематика",
+                      info_outer: "вархаммер ФБ, вархаммер 4000",
+                      link: "/wh/"
+                    },
+                    {
+                      id: "wm",
+                      name: "Военная техника",
+                      category: "Тематика",
+                      info_outer: "военная техника, армии, вооруженные конфликты",
+                      link: "/wm/"
+                    },
+                    {
+                      id: "di",
+                      name: "Столовая",
+                      category: "Творчество",
+                      info_outer: "еда, хрючево, столовая, рецепты",
+                      link: "/di/"
+                    },
+                    {
+                      id: "de",
+                      name: "Дизайн",
+                      category: "Творчество",
+                      info_outer: "",
+                      link: "/de/"
+                    },
+                    {
+                      id: "diy",
+                      name: "Хобби",
+                      category: "Творчество",
+                      info_outer: "хобби, лего, клеить танчики, вышивание",
+                      link: "/diy/"
+                    },
+                    {
+                      id: "dom",
+                      name: "Домострой",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/dom/"
+                    },
+                    {
+                      id: "izd",
+                      name: "Графомания",
+                      category: "Пользовательские",
+                      info_outer: "графомания, пасты, рассказы, романы",
+                      link: "/izd/"
+                    },
+                    {
+                      id: "mus",
+                      name: "Музыканты",
+                      category: "Творчество",
+                      info_outer: "музыкальные инструменты, вокал, DAW, звукозапись, диджеи, дикторы",
+                      link: "/mus/"
+                    },
+                    {
+                      id: "pa",
+                      name: "Живопись",
+                      category: "Творчество",
+                      info_outer: "живопись, рисунки, художники",
+                      link: "/pa/"
+                    },
+                    {
+                      id: "p",
+                      name: "Фотография",
+                      category: "Творчество",
+                      info_outer: "фотография, фототехника, объективы, canon, nikon, sony, pentax",
+                      link: "/p/"
+                    },
+                    {
+                      id: "wp",
+                      name: "Обои и высокое разрешение",
+                      category: "Творчество",
+                      info_outer: "",
+                      link: "/wp/"
+                    },
+                    {
+                      id: "td",
+                      name: "Трёхмерная графика",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/td/"
+                    },
+                    {
+                      id: "bg",
+                      name: "Настольные игры",
+                      category: "Игры",
+                      info_outer: "настольные игры",
+                      link: "/bg/"
+                    },
+                    {
+                      id: "cg",
+                      name: "Консоли",
+                      category: "Игры",
+                      info_outer: "консоли, playstation, xbox, nintendo",
+                      link: "/cg/"
+                    },
+                    {
+                      id: "mc",
+                      name: "Minecraft",
+                      category: "Пользовательские",
+                      info_outer: "майнкрафт, сервера",
+                      link: "/mc/"
+                    },
+                    {
+                      id: "mmo",
+                      name: "Massive multiplayer online games",
+                      category: "Игры",
+                      info_outer: "multiplayer games, mmo, wow, wot, eve, lineage",
+                      link: "/mmo/"
+                    },
+                    {
+                      id: "tes",
+                      name: "The Elder Scrolls",
+                      category: "Игры",
+                      info_outer: "TES, elder scrolls, morrowind, skyrim, oblivion, fusrodah",
+                      link: "/tes/"
+                    },
+                    {
+                      id: "vg",
+                      name: "Video Games General",
+                      category: "Игры",
+                      info_outer: "Видеоигры, general, официальные треды",
+                      link: "/vg/"
+                    },
+                    {
+                      id: "wr",
+                      name: "Текстовые авторские рпг",
+                      category: "Игры",
+                      info_outer: "текстовые рпг",
+                      link: "/wr/"
+                    },
+                    {
+                      id: "aa",
+                      name: "Аниме арт",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/aa/"
+                    },
+                    {
+                      id: "fd",
+                      name: "Фэндом",
+                      category: "Японская культура",
+                      info_outer: "фэндом, косплей, японская культура, аниме",
+                      link: "/fd/"
+                    },
+                    {
+                      id: "ja",
+                      name: "Японская культура",
+                      category: "Японская культура",
+                      info_outer: "",
+                      link: "/ja/"
+                    },
+                    {
+                      id: "ma",
+                      name: "Манга",
+                      category: "Японская культура",
+                      info_outer: "манга, наруто, блич, японские комиксы",
+                      link: "/ma/"
+                    },
+                    {
+                      id: "rm",
+                      name: "Rozen Maiden",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/rm/"
+                    },
+                    {
+                      id: "to",
+                      name: "Touhou",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/to/"
+                    },
+                    {
+                      id: "vn",
+                      name: "Визуальные новеллы",
+                      category: "Японская культура",
+                      info_outer: "визуальные новеллы",
+                      link: "/vn/"
+                    },
+                    {
+                      id: "d",
+                      name: "Скла/d/ грязи",
+                      category: "Разное",
+                      info_outer: "двач, модерация, разбань, забань, убери, верни, зделай",
+                      link: "/d/"
+                    },
+                    {
+                      id: "fag",
+                      name: "Фагготрия",
+                      category: "Взрослым",
+                      info_outer: "фагготрия, богини",
+                      link: "/fag/"
+                    },
+                    {
+                      id: "soc",
+                      name: "Общение",
+                      category: "Разное",
+                      info_outer: "сходки, знакомства, деанонимизация",
+                      link: "/soc/"
+                    },
+                    {
+                      id: "r",
+                      name: "Просьбы",
+                      category: "Разное",
+                      info_outer: "реквесты, ищу пикчу, вебмку, пасту",
+                      link: "/r/"
+                    },
+                    {
+                      id: "fg",
+                      name: "Трапы",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/fg/"
+                    },
+                    {
+                      id: "fur",
+                      name: "Фурри",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/fur/"
+                    },
+                    {
+                      id: "gg",
+                      name: "Хорошие девушки",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/gg/"
+                    },
+                    {
+                      id: "ga",
+                      name: "Геи",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/ga/"
+                    },
+                    {
+                      id: "h",
+                      name: "Хентай",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/h/"
+                    },
+                    {
+                      id: "ho",
+                      name: "Прочий хентай",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/ho/"
+                    },
+                    {
+                      id: "web",
+                      name: "Web-мастера",
+                      category: "Пользовательские",
+                      info_outer: "вебмастера, seo, реклама, пиар",
+                      link: "/web/"
+                    },
+                    {
+                      id: "gd",
+                      name: "Gamedev",
+                      category: "Техника и софт",
+                      info_outer: "gamedev, игрострой, эльфы набегают",
+                      link: "/gd/"
+                    },
+                    {
+                      id: "mov",
+                      name: "Фильмы",
+                      category: "Тематика",
+                      info_outer: "фильмы, кино, новинки, сериалы в /tv/",
+                      link: "/mov/"
+                    },
+                    {
+                      id: "rf",
+                      name: "Убежище",
+                      category: "Тематика",
+                      info_outer: "убежище, социофобия",
+                      link: "/rf/"
+                    },
+                    {
+                      id: "br",
+                      name: "Барахолка",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/br/"
+                    },
+                    {
+                      id: "wrk",
+                      name: "Работа и карьера",
+                      category: "Творчество",
+                      info_outer: "работа, карьера, офис, макдональдс",
+                      link: "/wrk/"
+                    },
+                    {
+                      id: "mu",
+                      name: "Музыка",
+                      category: "Тематика",
+                      info_outer: "музыка, илита",
+                      link: "/mu/"
+                    },
+                    {
+                      id: "trv",
+                      name: "Путешествия и отдых",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/trv/"
+                    },
+                    {
+                      id: "au",
+                      name: "Автомобили",
+                      category: "Тематика",
+                      info_outer: "автомобили, семейные биопроблемы, шкворни, патриот, сломалась дсг, тазопроблемы",
+                      link: "/au/"
+                    },
+                    {
+                      id: "gb",
+                      name: "Азартные игры",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/gb/"
+                    },
+                    {
+                      id: "asylum",
+                      name: "Убежище",
+                      category: "",
+                      info_outer: "",
+                      link: "/asylum/"
+                    },
+                    {
+                      id: "fs",
+                      name: "Фэнтези",
+                      category: "Пользовательские",
+                      info_outer: "фэнтези",
+                      link: "/fs/"
+                    },
+                    {
+                      id: "fet",
+                      name: "Фетиш",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/fet/"
+                    },
+                    {
+                      id: "e",
+                      name: "Extreme Pron",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/e/"
+                    },
+                    {
+                      id: "hc",
+                      name: "Hardcore",
+                      category: "Взрослым",
+                      info_outer: "",
+                      link: "/hc/"
+                    },
+                    {
+                      id: "moba",
+                      name: "Multiplayer Online Battle Arena games",
+                      category: "Игры",
+                      info_outer: "dota, lol, hots, moba",
+                      link: "/moba/"
+                    },
+                    {
+                      id: "mobi",
+                      name: "Мобильные устройства и приложения",
+                      category: "Техника и софт",
+                      info_outer: "мобильные телефоны, приложения, iphone, android, winphone, 2ch browser",
+                      link: "/mobi/"
+                    },
+                    {
+                      id: "abu",
+                      name: "abu",
+                      category: "Разное",
+                      info_outer: "",
+                      link: "/abu/"
+                    },
+                    {
+                      id: "cul",
+                      name: "Культура",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/cul/"
+                    },
+                    {
+                      id: "out",
+                      name: "Активный отдых",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/out/"
+                    },
+                    {
+                      id: "old",
+                      name: "Олдфаги",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/old/"
+                    },
+                    {
+                      id: "cc",
+                      name: "Криптовалюта",
+                      category: "Тематика",
+                      info_outer: "",
+                      link: "/cc/"
+                    },
+                    {
+                      id: "media",
+                      name: "Анимация",
+                      category: "Разное",
+                      info_outer: "webm, gif, youtube, медиа",
+                      link: "/media/"
+                    },
+                    {
+                      id: "zog",
+                      name: "Теории заговора",
+                      category: "Тематика",
+                      info_outer: "не стоит вскрывать эту тему",
+                      link: "/zog/"
+                    },
+                    {
+                      id: "ussr",
+                      name: "СССР",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/ussr/"
+                    },
+                    {
+                      id: "jsf",
+                      name: "Japanese Street Fashion",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/jsf/"
+                    },
+                    {
+                      id: "ukr",
+                      name: "/Ukr/aine — Україна",
+                      category: "Пользовательские",
+                      info_outer: "украина, че там у хохлов",
+                      link: "/ukr/"
+                    },
+                    {
+                      id: "sw",
+                      name: "Star Wars",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/sw/"
+                    },
+                    {
+                      id: "law",
+                      name: "Право и правоприменители",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/law/"
+                    },
+                    {
+                      id: "m",
+                      name: "Меха",
+                      category: "Пользовательские",
+                      info_outer: "Тематика для всей научной фантастики с роботами и космическими кораблями. Гандамы, Метал Гиры и прочее.",
+                      link: "/m/"
+                    },
+                    {
+                      id: "ya",
+                      name: "Яой",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/ya/"
+                    },
+                    {
+                      id: "r34",
+                      name: "Правило 34",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/r34/"
+                    },
+                    {
+                      id: "qtr4",
+                      name: "qtr4",
+                      category: "Пользовательские",
+                      info_outer: "",
+                      link: "/qtr4/"
+                    },
+                    {
+                      id: "wow",
+                      name: "World of Warcraft",
+                      category: "Пользовательские",
+                      info_outer: "wow, world of warcraft",
+                      link: "/wow/"
+                    }
+                  ]
+                };
+              },
+              methods: {
+                getBoardsByCategory() {
+                  const categories = {};
+                  this.boards.forEach(board => {
+                    const category = board.category || 'Без категории';
+                    if (!categories[category]) {
+                      categories[category] = [];
+                    }
+                    categories[category].push(board);
+                  });
+                  return categories;
                 }
-              }
-              
-              // Полностью удаляем экран загрузки после анимации
-              setTimeout(function() {
-                if (appLoading.parentNode) {
-                  appLoading.parentNode.removeChild(appLoading);
-                }
-              }, 300);
-            }, 100);
+              },
+              template: `
+                <div class="boards-container">
+                  <h1 class="main-title">Доски 2ch</h1>
+                  <div v-for="(boards, category) in getBoardsByCategory()" :key="category" class="category-section">
+                    <h2 class="category-title">{{ category }}</h2>
+                    <div class="boards-grid">
+                      <div v-for="board in boards" :key="board.id" class="board-card">
+                        <div class="board-header">
+                          <a :href="board.link" class="board-link">
+                            <span class="board-id">/{{ board.id }}/</span>
+                            <span class="board-name">{{ board.name }}</span>
+                          </a>
+                        </div>
+                        <div class="board-info" v-if="board.info_outer">
+                          {{ board.info_outer }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `
+            }).mount('#app');
+
+            // Если нужно показать/скрыть элементы
+            appLoading.style.display = 'none';
+            vueApp.style.display = 'block';
           } catch (e) {
             console.error('Ошибка при инициализации Vue:', e);
           }
@@ -726,7 +1330,6 @@
       });
     </script>
     
-    <!-- Vue приложение (загружается отложенно) -->
-    <script type="module" src="/src/main.js"></script>
+
   </body>
 </html>
