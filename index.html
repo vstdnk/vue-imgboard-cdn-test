@@ -367,10 +367,14 @@
       
       // Базовая проверка наличия Telegram WebApp API
       window.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded сработал');
+        
         // Элементы страницы
         var appLoading = document.getElementById('app-loading');
         var vueApp = document.getElementById('app');
         var isAppHidden = false;
+        
+        console.log('Элементы найдены:', { appLoading, vueApp });
         
         // Настраиваем для iOS
         if (isIOS) {
@@ -552,14 +556,18 @@
           if (isAppHidden) return; // Предотвращаем повторное скрытие
           isAppHidden = true;
           
+          console.log('Скрываем экран загрузки, показываем Vue приложение');
+          
           // Скрываем экран загрузки
           appLoading.classList.add('hidden');
           
-
+          // Показываем Vue приложение
+          vueApp.style.display = 'block';
           
           try {
-            // Инициализация Vue после DOMContentLoaded
-            const { createApp } = Vue;
+                    // Инициализация Vue после DOMContentLoaded
+        console.log('Начинаем инициализацию Vue...');
+        const { createApp } = Vue;
 
             createApp({
               data() {
@@ -1374,10 +1382,26 @@
                    return sortedCategories;
                  },
                  
-                 openBoard(boardId) {
-                   // Переходим на страницу доски
-                   window.location.href = `/board.html?id=${boardId}`;
-                 }
+                                   openBoard(boardId) {
+                    // Переходим на страницу доски
+                    console.log('Клик по доске:', boardId);
+                    console.log('Переходим на:', `board.html?id=${boardId}`);
+                    
+                    try {
+                      // Пробуем разные способы навигации
+                      if (window.Telegram && window.Telegram.WebApp) {
+                        // В Telegram WebApp используем location.assign
+                        window.location.assign(`board.html?id=${boardId}`);
+                      } else {
+                        // В обычном браузере используем href
+                        window.location.href = `board.html?id=${boardId}`;
+                      }
+                    } catch (e) {
+                      console.error('Ошибка при переходе:', e);
+                      // Fallback
+                      window.location.href = `board.html?id=${boardId}`;
+                    }
+                  }
                },
               template: `
                 <div class="boards-container">
@@ -1404,9 +1428,8 @@
               `
             }).mount('#app');
 
-            // Если нужно показать/скрыть элементы
-            appLoading.style.display = 'none';
-            vueApp.style.display = 'block';
+            console.log('Vue приложение успешно инициализировано');
+            // Vue приложение уже показано в hideLoading
           } catch (e) {
             console.error('Ошибка при инициализации Vue:', e);
           }
