@@ -143,6 +143,13 @@
 
       .board-header {
         display: flex;
+        position: fixed;
+        
+        top: 0;           /* Прикрепляет к верхнему краю экрана */
+        left: 0;          /* Опционально: прикрепляет к левому краю */
+        width: 100%;
+        z-index: 1000;    /* Убеждаемся, что он над другими элементами */
+
         align-items: center;
         gap: 28px;
         margin-bottom: 24px;
@@ -158,14 +165,14 @@
 
       .back-button {
         background-color: rgba(121, 115, 115, 0.1);;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(71, 49, 49, 0.1);
         font-size: 14px;
         font-weight: bold;
         color: var(--tg-theme-text-color);
         cursor: pointer;
         padding: 8px;
         border-radius: 18px;
-        margin-left: 31%;
+        margin-left: 29%;
         margin-top: 7.5%;
         transition: background-color 0.2s ease;
       }
@@ -266,7 +273,7 @@
       }
 
       html.dark .thread-card:hover {
-        background-color: rgba(73, 69, 69, 0.1);
+        background-color: rgba(59, 58, 58, 0.1);
       }
 
       /* Разделители между тредами */
@@ -1026,7 +1033,7 @@
                   
                   <div v-if="loading" class="error-message">
                     <div class="spinner"></div>
-                    <div>Загружаем треды...</div>
+                    <div>Загрузка...</div>
                   </div>
                   
                   <div v-else-if="error" class="error-message">
@@ -1077,8 +1084,8 @@
                    </div>
                   
                   <div v-else class="error-message">
-                    <div>Треды не найдены</div>
-                    <button class="retry-button" @click="retryLoad">Повторить</button>
+                    <div></div>
+                    <button class="retry-button" @click="retryLoad"></button>
                   </div>
                 </div>
               `
