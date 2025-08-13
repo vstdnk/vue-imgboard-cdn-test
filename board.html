@@ -144,7 +144,7 @@
       .board-header {
         display: flex;
         align-items: center;
-        gap: 38px;
+        gap: 28px;
         margin-bottom: 24px;
         padding: 16px;
         background-color: var(--tg-theme-secondary-bg-color);
@@ -157,17 +157,19 @@
       }
 
       .back-button {
-        background-color: rgba(97, 97, 97, 0.1);;
+        background-color: rgba(121, 115, 115, 0.1);;
         border: 1px solid rgba(0,0,0,0.1);
         font-size: 14px;
-        color: var(--tg-theme-link-color);
+        
+        color: var(--tg-theme-text-color);
         cursor: pointer;
         padding: 8px;
-        border-radius: 8px;
-        margin-left: 34%;
+        border-radius: 18px;
+        margin-left: 32%;
         margin-top: 7.5%;
         transition: background-color 0.2s ease;
       }
+
 
       .back-button:hover {
         background-color: rgba(0,0,0,0.1);
@@ -398,7 +400,7 @@
         .board-header {
           flex-direction: column;
           align-items: flex-start;
-          gap: 38px;
+          gap: 28px;
           padding: 12px;
         }
         
@@ -1014,7 +1016,7 @@
               template: `
                 <div class="board-container">
                   <div class="board-header">
-                    <button class="back-button" @click="goBack">К списку досок</button>
+                    <button class="back-button" @click="goBack">К списку разделов</button>
                     <div class="board-info">
                       <div class="board-id">/{{ boardInfo?.id }}/</div>
                       <div class="board-name">{{ boardInfo?.name }}</div>
