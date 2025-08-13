@@ -276,11 +276,84 @@
         line-height: 1.6;
       }
 
-      .post-text {
-        margin-bottom: 12px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-      }
+             .post-text {
+         margin-bottom: 12px;
+         white-space: pre-wrap;
+         word-wrap: break-word;
+         line-height: 1.6;
+       }
+       
+       /* Стили для обработанных HTML элементов */
+       .post-text strong {
+         font-weight: bold;
+       }
+       
+       .post-text em {
+         font-style: italic;
+       }
+       
+       .post-text u {
+         text-decoration: underline;
+       }
+       
+       .post-text del {
+         text-decoration: line-through;
+         color: var(--tg-theme-hint-color);
+       }
+       
+       .post-text code {
+         background-color: var(--tg-theme-secondary-bg-color);
+         padding: 2px 4px;
+         border-radius: 3px;
+         font-family: monospace;
+         font-size: 0.9em;
+       }
+       
+       .post-text .spoiler {
+         background-color: var(--tg-theme-text-color);
+         color: var(--tg-theme-text-color);
+         padding: 2px 4px;
+         border-radius: 3px;
+         cursor: pointer;
+         user-select: none;
+         transition: all 0.2s ease;
+       }
+       
+       .post-text .spoiler.revealed {
+         background-color: transparent;
+         color: inherit;
+       }
+       
+       .post-text .spoiler:hover {
+         background-color: var(--tg-theme-hint-color);
+       }
+       
+       .post-text .post-quote {
+         border-left: 3px solid var(--tg-theme-hint-color);
+         padding-left: 12px;
+         margin: 8px 0;
+         color: var(--tg-theme-hint-color);
+         font-style: italic;
+       }
+       
+       .post-text .post-link {
+         color: var(--tg-theme-link-color);
+         text-decoration: none;
+         font-weight: bold;
+       }
+       
+       .post-text .post-link:hover {
+         text-decoration: underline;
+       }
+       
+       .post-text .external-link {
+         color: var(--tg-theme-link-color);
+         text-decoration: none;
+       }
+       
+       .post-text .external-link:hover {
+         text-decoration: underline;
+       }
 
       .post-files {
         display: flex;
@@ -561,25 +634,30 @@
                   }
                 },
                 
-                loadNextPage() {
-                  if (!this.hasMore || this.loadingMore) return;
-                  
-                  this.loadingMore = true;
-                  
-                  // Имитируем задержку для плавности
-                  setTimeout(() => {
-                    const startIndex = (this.page - 1) * this.postsPerPage;
-                    const endIndex = startIndex + this.postsPerPage;
-                    const newPosts = this.allPosts.slice(startIndex, endIndex);
-                    
-                    this.posts.push(...newPosts);
-                    this.page++;
-                    
-                    // Проверяем, есть ли еще посты
-                    this.hasMore = endIndex < this.allPosts.length;
-                    this.loadingMore = false;
-                  }, 300);
-                },
+                                 loadNextPage() {
+                   if (!this.hasMore || this.loadingMore) return;
+                   
+                   this.loadingMore = true;
+                   
+                   // Имитируем задержку для плавности
+                   setTimeout(() => {
+                     const startIndex = (this.page - 1) * this.postsPerPage;
+                     const endIndex = startIndex + this.postsPerPage;
+                     const newPosts = this.allPosts.slice(startIndex, endIndex);
+                     
+                     this.posts.push(...newPosts);
+                     this.page++;
+                     
+                     // Проверяем, есть ли еще посты
+                     this.hasMore = endIndex < this.allPosts.length;
+                     this.loadingMore = false;
+                     
+                     // Настраиваем ссылки для новых постов
+                     this.$nextTick(() => {
+                       this.setupPostLinks();
+                     });
+                   }, 300);
+                 },
                 
                 onScroll() {
                   // Проверяем, достигли ли конца списка
@@ -662,18 +740,99 @@
                   window.location.href = `board.html?id=${this.boardId}`;
                 },
                 
-                retryLoad() {
-                  this.loadPosts();
-                }
+                                 retryLoad() {
+                   this.loadPosts();
+                 },
+                 
+                 processPostText(text) {
+                   if (!text) return '';
+                   
+                   // Обрабатываем HTML теги
+                   let processedText = text
+                     // Заменяем <br> на переносы строк
+                     .replace(/<br\s*\/?>/gi, '<br>')
+                     // Обрабатываем ссылки на посты (>>123456)
+                     .replace(/>>(\d+)/g, '<a href="#" class="post-link" data-post="$1">>>$1</a>')
+                     // Обрабатываем ссылки на треды
+                     .replace(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/gi, '<a href="$1" target="_blank" class="external-link">$2</a>')
+                     // Обрабатываем жирный текст
+                     .replace(/<b>([^<]+)<\/b>/gi, '<strong>$1</strong>')
+                     // Обрабатываем курсив
+                     .replace(/<i>([^<]+)<\/i>/gi, '<em>$1</em>')
+                     // Обрабатываем подчеркнутый текст
+                     .replace(/<u>([^<]+)<\/u>/gi, '<u>$1</u>')
+                     // Обрабатываем зачеркнутый текст
+                     .replace(/<s>([^<]+)<\/s>/gi, '<del>$1</del>')
+                     // Обрабатываем код
+                     .replace(/<code>([^<]+)<\/code>/gi, '<code class="post-code">$1</code>')
+                     // Обрабатываем спойлеры
+                     .replace(/<spoiler>([^<]+)<\/spoiler>/gi, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
+                     // Обрабатываем цитаты
+                     .replace(/<quote>([^<]+)<\/quote>/gi, '<blockquote class="post-quote">$1</blockquote>');
+                   
+                   return processedText;
+                 },
+                 
+                 setupPostLinks() {
+                   // Находим все ссылки на посты и добавляем обработчики
+                   const postLinks = document.querySelectorAll('.post-link');
+                   postLinks.forEach(link => {
+                     link.addEventListener('click', (e) => {
+                       e.preventDefault();
+                       const postNum = link.getAttribute('data-post');
+                       this.scrollToPost(postNum);
+                     });
+                   });
+                 },
+                 
+                 scrollToPost(postNum) {
+                   // Ищем пост с указанным номером
+                   const postElement = document.querySelector(`[data-post-id="${postNum}"]`);
+                   if (postElement) {
+                     postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                     // Добавляем подсветку
+                     postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.1)';
+                     setTimeout(() => {
+                       postElement.style.backgroundColor = '';
+                     }, 2000);
+                   } else {
+                     // Если пост еще не загружен, загружаем его
+                     this.loadPostAndScroll(postNum);
+                   }
+                 },
+                 
+                 async loadPostAndScroll(postNum) {
+                   // Загружаем все посты если нужно
+                   if (this.hasMore) {
+                     await this.loadAllPosts();
+                   }
+                   
+                   // Теперь ищем пост
+                   this.$nextTick(() => {
+                     this.scrollToPost(postNum);
+                   });
+                 },
+                 
+                 async loadAllPosts() {
+                   // Загружаем все оставшиеся посты
+                   while (this.hasMore) {
+                     await this.loadNextPage();
+                   }
+                 }
               },
               
-              mounted() {
-                this.loadThreadInfo();
-                this.loadPosts();
-                
-                // Добавляем обработчик скролла для ленивой загрузки
-                window.addEventListener('scroll', this.onScroll);
-              },
+                             mounted() {
+                 this.loadThreadInfo();
+                 this.loadPosts();
+                 
+                 // Добавляем обработчик скролла для ленивой загрузки
+                 window.addEventListener('scroll', this.onScroll);
+                 
+                 // Добавляем обработчик кликов по ссылкам на посты
+                 this.$nextTick(() => {
+                   this.setupPostLinks();
+                 });
+               },
               
               beforeUnmount() {
                 // Убираем обработчик скролла
@@ -702,7 +861,7 @@
                   </div>
                   
                   <div v-else-if="posts.length > 0" class="posts-container">
-                    <div v-for="post in posts" :key="post.id" class="post-card">
+                                         <div v-for="post in posts" :key="post.id" class="post-card" :data-post-id="post.id">
                       <div class="post-header">
                         <span class="post-number">#{{ post.id }}</span>
                         <span class="post-date">{{ formatTimestamp(post.date) }}</span>
@@ -712,7 +871,7 @@
                         <div v-if="post.subject" class="post-subject" style="font-weight: bold; margin-bottom: 8px;">
                           {{ post.subject }}
                         </div>
-                        <div v-if="post.text" class="post-text">{{ post.text }}</div>
+                                                 <div v-if="post.text" class="post-text" v-html="processPostText(post.text)"></div>
                         
                         <div v-if="post.files && post.files.length > 0" class="post-files">
                           <div v-for="file in post.files" :key="file.path" class="post-file">
