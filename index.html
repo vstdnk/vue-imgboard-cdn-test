@@ -234,10 +234,9 @@
         methods: {
           handleClick() {
             alert('Button clicked!');
-            // Здесь можно интегрировать Telegram WebApp API, например:
-            // if (tg) {
-            //   tg.showAlert('Button clicked!');
-            // }
+             if (tg) {
+               tg.showAlert('Button clicked!');
+             }
           }
         },
         template: `
