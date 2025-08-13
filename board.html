@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <!-- Метатеги для iOS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="TG Imgboard">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2678b6">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <title>TG Imgboard - Доска</title>
+
+    <!-- Загружаем Telegram WebApp скрипт до основного приложения -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Загружаем Vue.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Встроенные базовые стили -->
+    <style>
+      :root {
+        --tg-theme-bg-color: #ffffff;
+        --tg-theme-text-color: #222222;
+        --tg-theme-hint-color: #999999;
+        --tg-theme-link-color: #2678b6;
+        --tg-theme-button-color: #2678b6;
+        --tg-theme-button-text-color: #ffffff;
+        --tg-theme-secondary-bg-color: #f5f5f5;
+        --safe-area-inset-top: env(safe-area-inset-top, 0px);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      
+      html.dark {
+        --tg-theme-bg-color: #212121;
+        --tg-theme-text-color: #ffffff;
+        --tg-theme-hint-color: #aaaaaa;
+        --tg-theme-link-color: #8cc2ff;
+        --tg-theme-button-color: #2678b6;
+        --tg-theme-button-text-color: #ffffff;
+        --tg-theme-secondary-bg-color: #292929;
+      }
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      html, body {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: var(--tg-theme-bg-color);
+        color: var(--tg-theme-text-color);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+      }
+      
+      #app {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        touch-action: pan-y;
+      }
+      
+      #app-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--tg-theme-bg-color);
+        color: var(--tg-theme-text-color);
+        transition: opacity 0.3s;
+        z-index: 9999;
+      }
+      
+      #app-loading.hidden {
+        opacity: 0;
+        pointer-events: none;
+        z-index: -1;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 20px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: var(--tg-theme-button-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      html.dark .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-left-color: var(--tg-theme-link-color);
+      }
+      
+      .loading-text {
+        font-size: 14px;
+        letter-spacing: 1px;
+        font-weight: bold;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Стили для тредов */
+      .board-container {
+        padding: 16px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .board-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background-color: var(--tg-theme-secondary-bg-color);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .board-header {
+        border-color: rgba(255,255,255,0.1);
+      }
+
+      .back-button {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--tg-theme-link-color);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+      }
+
+      .back-button:hover {
+        background-color: rgba(0,0,0,0.1);
+      }
+
+      html.dark .back-button:hover {
+        background-color: rgba(255,255,255,0.1);
+      }
+
+      .board-info {
+        flex: 1;
+      }
+
+      .board-id {
+        font-family: monospace;
+        font-weight: bold;
+        color: var(--tg-theme-button-color);
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .board-name {
+        font-weight: 600;
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      .board-description {
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+        line-height: 1.4;
+      }
+
+      .threads-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        background-color: var(--tg-theme-secondary-bg-color);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .threads-grid {
+        border-color: rgba(255,255,255,0.1);
+      }
+
+      .thread-card {
+        background-color: var(--tg-theme-bg-color);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+      }
+
+      html.dark .thread-card {
+        background-color: var(--tg-theme-secondary-bg-color);
+      }
+
+      .thread-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background-color: var(--tg-theme-secondary-bg-color);
+      }
+
+      html.dark .thread-card:hover {
+        background-color: var(--tg-theme-bg-color);
+      }
+
+      /* Разделители между тредами */
+      .thread-card:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 16px;
+        right: 16px;
+        height: 1px;
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+
+      html.dark .thread-card:not(:last-child)::after {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .thread-header {
+        margin-bottom: 12px;
+      }
+
+      .thread-title {
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 1.4;
+        margin-bottom: 8px;
+      }
+
+      .thread-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+      }
+
+      .thread-stats {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+      }
+
+      html.dark .thread-stats {
+        border-top-color: rgba(255,255,255,0.1);
+      }
+
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 14px;
+        color: var(--tg-theme-hint-color);
+      }
+
+      .error-message {
+        text-align: center;
+        padding: 32px;
+        color: var(--tg-theme-hint-color);
+      }
+
+      .retry-button {
+        background-color: var(--tg-theme-button-color);
+        color: var(--tg-theme-button-text-color);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 16px;
+        transition: opacity 0.2s ease;
+      }
+
+      .retry-button:hover {
+        opacity: 0.8;
+      }
+
+      /* Адаптивность для мобильных устройств */
+      @media (max-width: 768px) {
+        .board-container {
+          padding: 12px;
+        }
+        
+        .board-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 12px;
+        }
+        
+        .threads-grid {
+          padding: 12px;
+        }
+        
+        .thread-card {
+          padding: 12px;
+        }
+        
+        .thread-card:not(:last-child)::after {
+          left: 12px;
+          right: 12px;
+        }
+        
+        .thread-meta {
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .thread-stats {
+          flex-direction: column;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Базовый экран загрузки -->
+    <div id="app-loading">
+      <div class="spinner"></div>
+      <div class="loading-text">THREADS LOADING...</div>
+    </div>
+    
+    <!-- Контейнер для Vue приложения -->
+    <div id="app" style="display: none;"></div>
+
+    <script>
+      // Определяем iOS устройства
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      // Базовая проверка наличия Telegram WebApp API
+      window.addEventListener('DOMContentLoaded', function() {
+        // Элементы страницы
+        var appLoading = document.getElementById('app-loading');
+        var vueApp = document.getElementById('app');
+        var isAppHidden = false;
+        
+        // Получаем ID доски из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const boardId = urlParams.get('id');
+        
+        if (!boardId) {
+          // Если нет ID доски, возвращаемся на главную
+          window.location.href = '/';
+          return;
+        }
+        
+        // Настраиваем для iOS
+        if (isIOS) {
+          document.body.classList.add('ios');
+          
+          // Предотвращаем скроллинг страницы целиком на iOS
+          document.addEventListener('touchmove', function(event) {
+            if (event.target.closest('#app') || event.target.closest('.board-container')) {
+              return;
+            }
+            event.preventDefault();
+          }, { passive: false });
+        }
+        
+        // Инициализация Telegram API
+        var tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+          tg = window.Telegram.WebApp;
+          
+          // Отключаем свайп вниз для закрытия приложения
+          try {
+            if (window.Telegram && window.Telegram.WebApp) {
+              var eventData = JSON.stringify({ allow_vertical_swipe: false });
+              if (window.TelegramWebviewProxy) {
+                window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', eventData);
+              } else {
+                window.parent.postMessage(JSON.stringify({
+                  eventType: 'web_app_setup_swipe_behavior',
+                  eventData: { allow_vertical_swipe: false }
+                }), 'https://web.telegram.org');
+              }
+              console.log('Свайп вниз отключен');
+            }
+          } catch (e) {
+            console.error('Ошибка при отключении свайпа вниз:', e);
+          }
+          
+          // Скрываем кнопку "Назад" в левом верхнем углу
+          try {
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
+              window.Telegram.WebApp.BackButton.hide();
+              console.log('Кнопка "Назад" скрыта');
+            }
+          } catch (e) {
+            console.error('Ошибка при скрытии кнопки "Назад":', e);
+          }
+          
+          // Применяем темную тему если нужно
+          if (tg.colorScheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          
+          // Настройка переменных CSS на основе Telegram темы
+          if (tg.themeParams) {
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
+            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
+            document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+          }
+        }
+        
+        // Функция скрытия экрана загрузки
+        window.hideLoading = function() {
+          if (isAppHidden) return;
+          isAppHidden = true;
+          
+          appLoading.classList.add('hidden');
+          
+          try {
+            // Инициализация Vue после DOMContentLoaded
+            const { createApp } = Vue;
+
+            createApp({
+              data() {
+                return {
+                  boardId: boardId,
+                  boardInfo: null,
+                  threads: [],
+                  loading: false,
+                  error: null
+                };
+              },
+              methods: {
+                async loadBoardInfo() {
+                  try {
+                    // Здесь можно загрузить информацию о доске
+                    // Пока используем заглушку
+                    this.boardInfo = {
+                      id: this.boardId,
+                      name: this.getBoardName(this.boardId),
+                      description: this.getBoardDescription(this.boardId)
+                    };
+                  } catch (e) {
+                    console.error('Ошибка при загрузке информации о доске:', e);
+                  }
+                },
+                
+                async loadThreads() {
+                  this.loading = true;
+                  this.error = null;
+                  
+                  try {
+                    // Пытаемся загрузить треды с разных источников для обхода CORS
+                    const threads = await this.fetchThreads();
+                    this.threads = threads;
+                  } catch (e) {
+                    console.error('Ошибка при загрузке тредов:', e);
+                    this.error = 'Не удалось загрузить треды. Возможно, проблема с CORS.';
+                  } finally {
+                    this.loading = false;
+                  }
+                },
+                
+                async fetchThreads() {
+                  // Пробуем разные способы загрузки для обхода CORS
+                  const sources = [
+                    `https://2ch.hk/${this.boardId}/catalog.json`,
+                    `https://2ch.hk/${this.boardId}/threads.json`,
+                    `https://api.2ch.hk/${this.boardId}/threads.json`
+                  ];
+                  
+                  for (const source of sources) {
+                    try {
+                      const response = await fetch(source, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                          'Accept': 'application/json',
+                          'User-Agent': 'Mozilla/5.0 (compatible; TG-Imgboard/1.0)'
+                        }
+                      });
+                      
+                      if (response.ok) {
+                        const data = await response.json();
+                        return this.parseThreads(data);
+                      }
+                    } catch (e) {
+                      console.log(`Не удалось загрузить с ${source}:`, e);
+                      continue;
+                    }
+                  }
+                  
+                  // Если все источники недоступны, возвращаем заглушку
+                  return this.getMockThreads();
+                },
+                
+                parseThreads(data) {
+                  // Парсим данные в зависимости от формата ответа
+                  if (data.threads && Array.isArray(data.threads)) {
+                    return data.threads.map(thread => ({
+                      id: thread.num || thread.id,
+                      title: thread.subject || thread.title || 'Без названия',
+                      posts: thread.posts_count || thread.posts || 0,
+                      views: thread.views || 0,
+                      timestamp: thread.timestamp || Date.now(),
+                      lastPost: thread.last_post || null
+                    }));
+                  }
+                  
+                  if (data.catalog && Array.isArray(data.catalog)) {
+                    return data.catalog.map(thread => ({
+                      id: thread.num || thread.id,
+                      title: thread.subject || thread.title || 'Без названия',
+                      posts: thread.posts_count || thread.posts || 0,
+                      views: thread.views || 0,
+                      timestamp: thread.timestamp || Date.now(),
+                      lastPost: thread.last_post || null
+                    }));
+                  }
+                  
+                  return this.getMockThreads();
+                },
+                
+                getMockThreads() {
+                  // Заглушка для демонстрации
+                  return [
+                    {
+                      id: 1,
+                      title: 'Общий тред для обсуждения',
+                      posts: 150,
+                      views: 2500,
+                      timestamp: Date.now() - 3600000,
+                      lastPost: 'Последний пост'
+                    },
+                    {
+                      id: 2,
+                      title: 'Вопросы и ответы',
+                      posts: 89,
+                      views: 1200,
+                      timestamp: Date.now() - 7200000,
+                      lastPost: 'Новый вопрос'
+                    },
+                    {
+                      id: 3,
+                      title: 'Обмен опытом',
+                      posts: 234,
+                      views: 4100,
+                      timestamp: Date.now() - 1800000,
+                      lastPost: 'Интересный опыт'
+                    }
+                  ];
+                },
+                
+                getBoardName(boardId) {
+                  const boardNames = {
+                    'a': 'Аниме',
+                    'b': 'Бред',
+                    'bi': 'Велосипеды',
+                    'biz': 'Бизнес',
+                    'bo': 'Книги',
+                    'c': 'Комиксы и мультфильмы',
+                    'dev': 'Тянач',
+                    'em': 'Другие страны',
+                    'ew': 'Конец света',
+                    'fa': 'Мода и стиль',
+                    'fiz': 'Физкультура',
+                    'fl': 'Иностранные языки',
+                    'ftb': 'Футбол',
+                    'hh': 'Hip-Hop',
+                    'hi': 'История',
+                    'hw': 'Железо и Техника',
+                    'me': 'Медицина',
+                    'mg': 'Магия',
+                    'mlp': 'My Little Pony',
+                    'mo': 'Мотоциклы',
+                    'ne': 'Животные и природа',
+                    'pvc': 'Фигурки',
+                    'ph': 'Философия',
+                    'po': 'Политика',
+                    'pr': 'Программирование',
+                    'psy': 'Психология и психиатрия',
+                    'ra': 'Радиотехника',
+                    're': 'Религия',
+                    's': 'Программы',
+                    'sf': 'Научная фантастика',
+                    'sci': 'Наука',
+                    'sn': 'Паранормальные явления',
+                    'sp': 'Спорт',
+                    'spc': 'Космос и астрономия',
+                    't': 'Техника',
+                    'tr': 'Транспорт и авиация',
+                    'tv': 'Сериалы',
+                    'un': 'Образование',
+                    'w': 'Оружие',
+                    'wh': 'Warhammer',
+                    'wm': 'Военная техника',
+                    'di': 'Столовая',
+                    'de': 'Дизайн',
+                    'diy': 'Хобби',
+                    'dom': 'Домострой',
+                    'izd': 'Графомания',
+                    'mus': 'Музыканты',
+                    'pa': 'Живопись',
+                    'p': 'Фотография',
+                    'wp': 'Обои и высокое разрешение',
+                    'td': 'Трёхмерная графика',
+                    'bg': 'Настольные игры',
+                    'cg': 'Консоли',
+                    'mc': 'Minecraft',
+                    'mmo': 'Massive multiplayer online games',
+                    'tes': 'The Elder Scrolls',
+                    'vg': 'Video Games General',
+                    'wr': 'Текстовые авторские рпг',
+                    'aa': 'Аниме арт',
+                    'fd': 'Фэндом',
+                    'ja': 'Японская культура',
+                    'ma': 'Манга',
+                    'rm': 'Rozen Maiden',
+                    'to': 'Touhou',
+                    'vn': 'Визуальные новеллы',
+                    'd': 'Скла/d/ грязи',
+                    'fag': 'Фагготрия',
+                    'soc': 'Общение',
+                    'r': 'Просьбы',
+                    'fg': 'Трапы',
+                    'fur': 'Фурри',
+                    'gg': 'Хорошие девушки',
+                    'ga': 'Геи',
+                    'h': 'Хентай',
+                    'ho': 'Прочий хентай',
+                    'web': 'Web-мастера',
+                    'gd': 'Gamedev',
+                    'mov': 'Фильмы',
+                    'rf': 'Убежище',
+                    'br': 'Барахолка',
+                    'wrk': 'Работа и карьера',
+                    'mu': 'Музыка',
+                    'trv': 'Путешествия и отдых',
+                    'au': 'Автомобили',
+                    'gb': 'Азартные игры',
+                    'asylum': 'Убежище',
+                    'fs': 'Фэнтези',
+                    'fet': 'Фетиш',
+                    'e': 'Extreme Pron',
+                    'hc': 'Hardcore',
+                    'moba': 'Multiplayer Online Battle Arena games',
+                    'mobi': 'Мобильные устройства и приложения',
+                    'abu': 'abu',
+                    'cul': 'Культура',
+                    'out': 'Активный отдых',
+                    'old': 'Олдфаги',
+                    'cc': 'Криптовалюта',
+                    'media': 'Анимация',
+                    'zog': 'Теории заговора',
+                    'ussr': 'СССР',
+                    'jsf': 'Japanese Street Fashion',
+                    'ukr': '/Ukr/aine — Україна',
+                    'sw': 'Star Wars',
+                    'law': 'Право и правоприменители',
+                    'm': 'Меха',
+                    'ya': 'Яой',
+                    'r34': 'Правило 34',
+                    'qtr4': 'qtr4',
+                    'wow': 'World of Warcraft'
+                  };
+                  return boardNames[boardId] || `Доска /${boardId}/`;
+                },
+                
+                getBoardDescription(boardId) {
+                  const descriptions = {
+                    'a': 'аниме, 2d, вайфу',
+                    'b': 'бред',
+                    'bi': 'велосипеды, dmx',
+                    'biz': 'бизнес, сириуз бизнес',
+                    'bo': 'книги, чтение',
+                    'c': 'комиксы, мультфильмы',
+                    'dev': 'тянач',
+                    'em': 'эмиграция, страны',
+                    'ew': 'конец света',
+                    'fa': 'мода, стиль, шмотки, стрижки, партаки, рюкзаки, парфюм, патлы',
+                    'fiz': 'физкультура, здоровье, сбросить вес, набрать вес, бицуха',
+                    'fl': 'иностранные языки, мунспик, эльфийский',
+                    'ftb': 'футбол, премьер лига, ногомяч',
+                    'hh': 'хипхоп, рэп, олдскул',
+                    'hi': 'история',
+                    'hw': 'железо, видеокарты, ноутбуки, intel, amd, nvidia, ati',
+                    'me': 'медицина, здоровье, диагностика, сходи к врачу',
+                    'mg': 'магия, астрал, вуду, руны, псионика, суккубы',
+                    'mlp': 'Мои маленькие пони, дружба, магия',
+                    'mo': 'Мотоциклы, скутеры, трайки, экипировка',
+                    'ne': 'животные и природа',
+                    'pvc': 'фигурки',
+                    'ph': 'философия',
+                    'po': 'политика, новости, ольгинцы, хохлы, либерахи, рептилоиды.. oh shi',
+                    'pr': 'программирование, быдлокодинг',
+                    'psy': 'психология, психиатрия',
+                    'ra': 'радиолюбители, связь, радиотехника',
+                    're': 'религия, религиозная философия',
+                    's': 'linux, windows, шиндовс, программы',
+                    'sf': 'научная фантастика, science fiction, sci-fi',
+                    'sci': 'наука',
+                    'sn': 'крипи, паранормальные явления',
+                    'sp': 'спорт, спортивные игры, футбол в /ftb/',
+                    'spc': 'космос, астрономия, вселенные, звезды, огурцы',
+                    't': 'техника, технологии, компьютерная периферия',
+                    'tr': 'транспорт и авиация',
+                    'tv': 'сериалы для домохозяек',
+                    'un': 'образование, вуз, школа, поступление, гиа, егэ, уже не школьник',
+                    'w': 'оружие, ножи, стволы',
+                    'wh': 'вархаммер ФБ, вархаммер 4000',
+                    'wm': 'военная техника, армии, вооруженные конфликты',
+                    'di': 'еда, хрючево, столовая, рецепты',
+                    'de': 'дизайн',
+                    'diy': 'хобби, лего, клеить танчики, вышивание',
+                    'dom': 'домострой',
+                    'izd': 'графомания, пасты, рассказы, романы',
+                    'mus': 'музыкальные инструменты, вокал, DAW, звукозапись, диджеи, дикторы',
+                    'pa': 'живопись, рисунки, художники',
+                    'p': 'фотография, фототехника, объективы, canon, nikon, sony, pentax',
+                    'wp': 'обои и высокое разрешение',
+                    'td': 'трёхмерная графика',
+                    'bg': 'настольные игры',
+                    'cg': 'консоли, playstation, xbox, nintendo',
+                    'mc': 'майнкрафт, сервера',
+                    'mmo': 'multiplayer games, mmo, wow, wot, eve, lineage',
+                    'tes': 'TES, elder scrolls, morrowind, skyrim, oblivion, fusrodah',
+                    'vg': 'Видеоигры, general, официальные треды',
+                    'wr': 'текстовые рпг',
+                    'aa': 'аниме арт',
+                    'fd': 'фэндом, косплей, японская культура, аниме',
+                    'ja': 'японская культура',
+                    'ma': 'манга, наруто, блич, японские комиксы',
+                    'rm': 'rozen maiden',
+                    'to': 'touhou',
+                    'vn': 'визуальные новеллы',
+                    'd': 'двач, модерация, разбань, забань, убери, верни, зделай',
+                    'fag': 'фагготрия, богини',
+                    'soc': 'сходки, знакомства, деанонимизация',
+                    'r': 'реквесты, ищу пикчу, вебмку, пасту',
+                    'fg': 'трапы',
+                    'fur': 'фурри',
+                    'gg': 'хорошие девушки',
+                    'ga': 'геи',
+                    'h': 'хентай',
+                    'ho': 'прочий хентай',
+                    'web': 'вебмастера, seo, реклама, пиар',
+                    'gd': 'gamedev, игрострой, эльфы набегают',
+                    'mov': 'фильмы, кино, новинки, сериалы в /tv/',
+                    'rf': 'убежище, социофобия',
+                    'br': 'барахолка',
+                    'wrk': 'работа, карьера, офис, макдональдс',
+                    'mu': 'музыка, илита',
+                    'trv': 'путешествия и отдых',
+                    'au': 'автомобили, семейные биопроблемы, шкворни, патриот, сломалась дсг, тазопроблемы',
+                    'gb': 'азартные игры',
+                    'asylum': 'убежище',
+                    'fs': 'фэнтези',
+                    'fet': 'фетиш',
+                    'e': 'extreme pron',
+                    'hc': 'hardcore',
+                    'moba': 'dota, lol, hots, moba',
+                    'mobi': 'мобильные телефоны, приложения, iphone, android, winphone, 2ch browser',
+                    'abu': 'abu',
+                    'cul': 'культура',
+                    'out': 'активный отдых',
+                    'old': 'олдфаги',
+                    'cc': 'криптовалюта',
+                    'media': 'webm, gif, youtube, медиа',
+                    'zog': 'не стоит вскрывать эту тему',
+                    'ussr': 'СССР',
+                    'jsf': 'japanese street fashion',
+                    'ukr': 'украина, че там у хохлов',
+                    'sw': 'star wars',
+                    'law': 'право и правоприменители',
+                    'm': 'Тематика для всей научной фантастики с роботами и космическими кораблями. Гандамы, Метал Гиры и прочее.',
+                    'ya': 'яой',
+                    'r34': 'правило 34',
+                    'qtr4': 'qtr4',
+                    'wow': 'wow, world of warcraft'
+                  };
+                  return descriptions[boardId] || '';
+                },
+                
+                goBack() {
+                  window.location.href = '/';
+                },
+                
+                openThread(threadId) {
+                  // Открываем тред (можно реализовать позже)
+                  console.log('Открываем тред:', threadId);
+                },
+                
+                retryLoad() {
+                  this.loadThreads();
+                }
+              },
+              
+              mounted() {
+                this.loadBoardInfo();
+                this.loadThreads();
+              },
+              
+              template: `
+                <div class="board-container">
+                  <div class="board-header">
+                    <button class="back-button" @click="goBack">←</button>
+                    <div class="board-info">
+                      <div class="board-id">/{{ boardInfo?.id }}/</div>
+                      <div class="board-name">{{ boardInfo?.name }}</div>
+                      <div class="board-description" v-if="boardInfo?.description">{{ boardInfo.description }}</div>
+                    </div>
+                  </div>
+                  
+                  <div v-if="loading" class="error-message">
+                    <div class="spinner"></div>
+                    <div>Загружаем треды...</div>
+                  </div>
+                  
+                  <div v-else-if="error" class="error-message">
+                    <div>{{ error }}</div>
+                    <button class="retry-button" @click="retryLoad">Повторить</button>
+                  </div>
+                  
+                  <div v-else-if="threads.length > 0" class="threads-grid">
+                    <div v-for="thread in threads" :key="thread.id" class="thread-card" @click="openThread(thread.id)">
+                      <div class="thread-header">
+                        <div class="thread-title">{{ thread.title }}</div>
+                        <div class="thread-meta">
+                          <span>Тред #{{ thread.id }}</span>
+                          <span>{{ new Date(thread.timestamp).toLocaleString() }}</span>
+                        </div>
+                      </div>
+                      <div class="thread-stats">
+                        <div class="stat-item">
+                          <span>📝</span>
+                          <span>{{ thread.posts }}</span>
+                        </div>
+                        <div class="stat-item">
+                          <span>👁️</span>
+                          <span>{{ thread.views }}</span>
+                        </div>
+                        <div class="stat-item" v-if="thread.lastPost">
+                          <span>💬</span>
+                          <span>{{ thread.lastPost }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-else class="error-message">
+                    <div>Треды не найдены</div>
+                    <button class="retry-button" @click="retryLoad">Повторить</button>
+                  </div>
+                </div>
+              `
+            }).mount('#app');
+
+            // Показываем приложение
+            appLoading.style.display = 'none';
+            vueApp.style.display = 'block';
+          } catch (e) {
+            console.error('Ошибка при инициализации Vue:', e);
+          }
+        };
+        
+        // Инициализация Telegram WebApp и автоматическое скрытие экрана загрузки
+        setTimeout(function() {
+          if (window.Telegram && window.Telegram.WebApp) {
+            try {
+              // Сообщаем Telegram что приложение готово
+              window.Telegram.WebApp.ready();
+              window.Telegram.WebApp.expand();
+              
+              // Принудительно устанавливаем полноэкранный режим
+              document.documentElement.style.height = '100%';
+              document.body.style.height = '100%';
+            } catch (e) {
+              console.error('Ошибка при инициализации Telegram WebApp:', e);
+            }
+          }
+          
+          // Принудительно скрываем экран загрузки
+          setTimeout(function() {
+            window.hideLoading();
+          }, isIOS ? 1000 : 500);
+        }, 100);
+        
+        // Дополнительная защита: скрываем экран загрузки при загрузке страницы
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            window.hideLoading();
+          }, 500);
+        });
+      });
+    </script>
+  </body>
+</html>

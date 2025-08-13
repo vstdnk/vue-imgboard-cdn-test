@@ -225,6 +225,8 @@
           min-width: 200px;
           flex: 1 1 auto;
           position: relative;
+          cursor: pointer;
+          user-select: none;
         }
 
         /* Добавляем разделители между досками */
@@ -724,13 +726,13 @@
                       info_outer: "",
                       link: "/ph/"
                     },
-                    {
-                      id: "po",
-                      name: "Политика",
-                      category: "Политика",
-                      info_outer: "политика, новости, ольгинцы, хохлы, либерахи, рептилоиды.. oh shi",
-                      link: "/po/"
-                    },
+                                         {
+                       id: "po",
+                       name: "Политика",
+                       category: "Политика и новости",
+                       info_outer: "политика, новости, ольгинцы, хохлы, либерахи, рептилоиды.. oh shi",
+                       link: "/po/"
+                     },
                     {
                       id: "pr",
                       name: "Программирование",
@@ -1329,19 +1331,54 @@
                   ]
                 };
               },
-              methods: {
-                getBoardsByCategory() {
-                  const categories = {};
-                  this.boards.forEach(board => {
-                    const category = board.category || 'Без категории';
-                    if (!categories[category]) {
-                      categories[category] = [];
-                    }
-                    categories[category].push(board);
-                  });
-                  return categories;
-                }
-              },
+                             methods: {
+                 getBoardsByCategory() {
+                   const categories = {};
+                   this.boards.forEach(board => {
+                     const category = board.category || 'Без категории';
+                     if (!categories[category]) {
+                       categories[category] = [];
+                     }
+                     categories[category].push(board);
+                   });
+                   
+                   // Определяем порядок отображения разделов
+                   const categoryOrder = [
+                     'Тематика',
+                     'Творчество', 
+                     'Политика и новости',
+                     'Техника и софт',
+                     'Игры',
+                     'Взрослым',
+                     'Японская культура',
+                     'Разное',
+                     'Новые доски',
+                     'Пользовательские'
+                   ];
+                   
+                   // Сортируем категории по заданному порядку
+                   const sortedCategories = {};
+                   categoryOrder.forEach(catName => {
+                     if (categories[catName]) {
+                       sortedCategories[catName] = categories[catName];
+                     }
+                   });
+                   
+                   // Добавляем оставшиеся категории в конец
+                   Object.keys(categories).forEach(catName => {
+                     if (!categoryOrder.includes(catName)) {
+                       sortedCategories[catName] = categories[catName];
+                     }
+                   });
+                   
+                   return sortedCategories;
+                 },
+                 
+                 openBoard(boardId) {
+                   // Переходим на страницу доски
+                   window.location.href = `/board.html?id=${boardId}`;
+                 }
+               },
               template: `
                 <div class="boards-container">
                   <div class="app-header">
@@ -1350,17 +1387,17 @@
                   <div v-for="(boards, category) in getBoardsByCategory()" :key="category" class="category-section">
                     <h2 class="category-title">{{ category }}</h2>
                     <div class="boards-grid">
-                      <div v-for="board in boards" :key="board.id" class="board-card">
-                        <div class="board-header">
-                          <a :href="board.link" class="board-link">
-                            <span class="board-id">/{{ board.id }}/</span>
-                            <span class="board-name">{{ board.name }}</span>
-                          </a>
-                        </div>
-                        <div class="board-info" v-if="board.info_outer">
-                          {{ board.info_outer }}
-                        </div>
-                      </div>
+                                             <div v-for="board in boards" :key="board.id" class="board-card" @click="openBoard(board.id)">
+                         <div class="board-header">
+                           <div class="board-link">
+                             <span class="board-id">/{{ board.id }}/</span>
+                             <span class="board-name">{{ board.name }}</span>
+                           </div>
+                         </div>
+                         <div class="board-info" v-if="board.info_outer">
+                           {{ board.info_outer }}
+                         </div>
+                       </div>
                     </div>
                   </div>
                 </div>
