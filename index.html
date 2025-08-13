@@ -1310,7 +1310,9 @@
               },
               template: `
                 <div class="boards-container">
-                  <h1 class="main-title">Доски 2ch</h1>
+                  <div class="header">
+                    <h1 class="main-title">Доски 2ch</h1>
+                  </div>
                   <div v-for="(boards, category) in getBoardsByCategory()" :key="category" class="category-section">
                     <h2 class="category-title">{{ category }}</h2>
                     <div class="boards-grid">
