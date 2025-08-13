@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Telegram Mini App Template</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
@@ -45,6 +45,11 @@
     #app-loading, #basic-app {
       display: none;
     }
+    .ios-fullscreen {
+      /* Дополнительные стили для полноэкранного режима на iOS */
+      height: 100vh !important;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -57,7 +62,7 @@
   <script>
     // Определяем iOS устройства
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
+    
     // Базовая проверка наличия Telegram WebApp API
     window.addEventListener('DOMContentLoaded', function() {
       // Элементы страницы
@@ -85,50 +90,52 @@
       if (window.Telegram && window.Telegram.WebApp) {
         tg = window.Telegram.WebApp;
         
-        // Отключаем свайп вниз для закрытия приложения
+        // Отключаем вертикальные свайпы (используем официальный метод с Bot API 7.7+)
         try {
-          if (window.Telegram && window.Telegram.WebApp) {
-            var eventData = JSON.stringify({ allow_vertical_swipe: false });
-            if (window.TelegramWebviewProxy) {
-              window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', eventData);
-            } else {
-              window.parent.postMessage(JSON.stringify({
-                eventType: 'web_app_setup_swipe_behavior',
-                eventData: { allow_vertical_swipe: false }
-              }), 'https://web.telegram.org');
-            }
-            console.log('Свайп вниз отключен');
-          }
+          tg.disableVerticalSwipes();
+          console.log('Вертикальные свайпы отключены');
         } catch (e) {
-          console.error('Ошибка при отключении свайпа вниз:', e);
+          console.error('Ошибка при отключении вертикальных свайпов:', e);
+          // Фallback на low-level postEvent, если метод не поддерживается
+          var swipeData = { allow_vertical_swipe: false };
+          var swipeEventData = JSON.stringify(swipeData);
+          if (window.TelegramWebviewProxy) {
+            window.TelegramWebviewProxy.postEvent('web_app_setup_swipe_behavior', swipeEventData);
+          } else {
+            window.parent.postMessage(JSON.stringify({
+              eventType: 'web_app_setup_swipe_behavior',
+              eventData: swipeData
+            }), '*');
+          }
         }
         
-        // Скрываем кнопку "Назад" в левом верхнем углу
+        // Скрываем кнопку "Назад"
         try {
-          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.BackButton) {
-            window.Telegram.WebApp.BackButton.hide();
+          if (tg.BackButton) {
+            tg.BackButton.hide();
             console.log('Кнопка "Назад" скрыта');
           }
         } catch (e) {
           console.error('Ошибка при скрытии кнопки "Назад":', e);
         }
         
-        // Блокировка ориентации экрана в портретном режиме
+        // Блокировка ориентации экрана (используем официальный метод с Bot API 8.0+)
         try {
-          if (window.Telegram && window.Telegram.WebApp) {
-            var orientationData = JSON.stringify({ locked: true });
-            if (window.TelegramWebviewProxy) {
-              window.TelegramWebviewProxy.postEvent('web_app_toggle_orientation_lock', orientationData);
-            } else {
-              window.parent.postMessage(JSON.stringify({
-                eventType: 'web_app_toggle_orientation_lock',
-                eventData: { locked: true }
-              }), 'https://web.telegram.org');
-            }
-            console.log('Ориентация экрана заблокирована');
-          }
+          tg.lockOrientation();
+          console.log('Ориентация экрана заблокирована');
         } catch (e) {
           console.error('Ошибка при блокировке ориентации экрана:', e);
+          // Fallback на low-level postEvent
+          var orientationData = { locked: true };
+          var orientationEventData = JSON.stringify(orientationData);
+          if (window.TelegramWebviewProxy) {
+            window.TelegramWebviewProxy.postEvent('web_app_toggle_orientation_lock', orientationEventData);
+          } else {
+            window.parent.postMessage(JSON.stringify({
+              eventType: 'web_app_toggle_orientation_lock',
+              eventData: orientationData
+            }), '*');
+          }
         }
         
         // Применяем темную тему если нужно
@@ -138,76 +145,56 @@
         
         // Настройка переменных CSS на основе Telegram темы
         if (tg.themeParams) {
-          document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
-          document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
-          document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color);
-          document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color);
-          document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color);
-          document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color);
-          document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color);
+          document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#f0f0f0');
+          document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+          document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#707579');
+          document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+          document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2ea6ff');
+          document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+          document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#ffffff');
         }
         
         // Функция активации полноэкранного режима
         var toggleFullScreen = function() {
           try {
             // Скрываем кнопки
-            if (window.Telegram && window.Telegram.WebApp) {
-              if (window.Telegram.WebApp.BackButton) window.Telegram.WebApp.BackButton.hide();
-              if (window.Telegram.WebApp.MainButton) window.Telegram.WebApp.MainButton.hide();
-              if (window.Telegram.WebApp.disableSwipeToClose) window.Telegram.WebApp.disableSwipeToClose();
-            }
+            if (tg.BackButton) tg.BackButton.hide();
+            if (tg.MainButton) tg.MainButton.hide();
             
             // Добавляем класс для iOS
             if (isIOS) document.body.classList.add('ios-fullscreen');
             
-            // Расширяем окно всеми доступными методами
-            if (tg.expand) tg.expand();
-            if (tg.requestFullscreen) tg.requestFullscreen();
-            if (window.Telegram && window.Telegram.WebApp) {
-              if (window.Telegram.WebApp.expand) window.Telegram.WebApp.expand();
-              if (window.Telegram.WebApp.setViewportHeight) window.Telegram.WebApp.setViewportHeight(1.0);
-            }
+            // Расширяем и запрашиваем полноэкранный режим
+            tg.expand();
+            tg.requestFullscreen();
             
-            // Отправляем событие для расширения
-            try {
-              var expandData = JSON.stringify({force: true});
-              if (window.TelegramWebviewProxy) {
-                window.TelegramWebviewProxy.postEvent('web_app_expand', expandData);
-              } else {
-                window.parent.postMessage(JSON.stringify({
-                  eventType: 'web_app_expand',
-                  eventData: {force: true}
-                }), '*');
-              }
-            } catch (e) {}
-            
-            // Устанавливаем viewport
-            var viewportMeta = document.querySelector('meta[name="viewport"]');
-            if (viewportMeta) {
-              viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+            // Fallback на low-level expand
+            var expandData = { force: true };
+            var expandEventData = JSON.stringify(expandData);
+            if (window.TelegramWebviewProxy) {
+              window.TelegramWebviewProxy.postEvent('web_app_expand', expandEventData);
+            } else {
+              window.parent.postMessage(JSON.stringify({
+                eventType: 'web_app_expand',
+                eventData: expandData
+              }), '*');
             }
           } catch (e) {
             console.error('Ошибка полноэкранного режима:', e);
           }
         };
 
-        // Автоматически активируем полноэкранный режим при загрузке
         // Функция активации полноэкранного режима с повторами
-        var activateFullScreenMode = function(attempts) {
-          attempts = attempts || 0;
-          var maxAttempts = isIOS ? 3 : 2;
+        var activateFullScreenMode = function(attempts = 0) {
+          const maxAttempts = isIOS ? 3 : 2;
           try {
             toggleFullScreen();
             if (isIOS && attempts < maxAttempts) {
-              setTimeout(function() {
-                activateFullScreenMode(attempts + 1);
-              }, 300);
+              setTimeout(() => activateFullScreenMode(attempts + 1), 300);
             }
           } catch (e) {
             if (attempts < maxAttempts) {
-              setTimeout(function() {
-                activateFullScreenMode(attempts + 1);
-              }, 300);
+              setTimeout(() => activateFullScreenMode(attempts + 1), 300);
             }
           }
         };
@@ -218,26 +205,22 @@
         // Дополнительные события для iOS
         if (isIOS) {
           // При загрузке страницы
-          window.addEventListener('load', function() {
-            setTimeout(activateFullScreenMode, 500);
-          });
+          window.addEventListener('load', () => setTimeout(activateFullScreenMode, 500));
           
           // При возвращении на страницу
-          document.addEventListener('visibilitychange', function() {
+          document.addEventListener('visibilitychange', () => {
             if (!document.hidden) setTimeout(activateFullScreenMode, 300);
           });
           
           // При получении фокуса
-          window.addEventListener('focus', function() {
-            setTimeout(activateFullScreenMode, 300);
-          });
+          window.addEventListener('focus', () => setTimeout(activateFullScreenMode, 300));
           
           // При восстановлении из кэша
-          window.addEventListener('pageshow', function(event) {
+          window.addEventListener('pageshow', (event) => {
             if (event.persisted) setTimeout(activateFullScreenMode, 300);
           });
         }
-      } // Закрывающая скобка для if (window.Telegram && window.Telegram.WebApp)
+      }
 
       // Инициализация Vue после DOMContentLoaded
       const { createApp } = Vue;
@@ -252,8 +235,8 @@
           handleClick() {
             alert('Button clicked!');
             // Здесь можно интегрировать Telegram WebApp API, например:
-            // if (window.Telegram && window.Telegram.WebApp) {
-            //   window.Telegram.WebApp.showAlert('Button clicked!');
+            // if (tg) {
+            //   tg.showAlert('Button clicked!');
             // }
           }
         },
