@@ -312,6 +312,36 @@
       .post-content {
         margin-bottom: 12px;
         line-height: 1.6;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .post-thumb {
+        flex-shrink: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 6px;
+        margin-top: 5px;
+        overflow: hidden;
+        background-color: var(--tg-theme-secondary-bg-color);
+      }
+
+      .post-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.2s ease;
+        cursor: zoom-in;
+      }
+
+      .post-thumb img:hover {
+        transform: scale(1.02);
+      }
+
+      .post-info {
+        flex: 1;
+        min-width: 0;
       }
 
              .post-text {
@@ -447,6 +477,7 @@
         width: 100%;
         height: auto;
         display: block;
+        cursor: zoom-in;
       }
 
       .post-file video {
@@ -540,6 +571,55 @@
          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
        }
 
+        /* Lightbox */
+        .lightbox-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+          padding: 16px;
+        }
+        .lightbox-content {
+          max-width: 80vw;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          align-items: center;
+        }
+        .lightbox-image {
+          max-width: 80vw;
+          max-height: 80vh;
+          object-fit: contain;
+          border-radius: 8px;
+          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+          background: #000;
+          cursor: zoom-out;
+        }
+        .lightbox-info {
+          color: #ffffff;
+          font-size: 13px;
+          opacity: 0.9;
+          text-align: center;
+        }
+        .lightbox-close {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          color: #ffffff;
+          background: rgba(0, 0, 0, 0.45);
+          border: none;
+          border-radius: 16px;
+          padding: 8px 12px;
+          cursor: pointer;
+        }
+
       /* Адаптивность для мобильных устройств */
       @media (max-width: 768px) {
         .thread-container {
@@ -572,6 +652,11 @@
         
         .post-file {
           max-width: 100%;
+        }
+        
+        .post-thumb {
+          width: 60px;
+          height: 60px;
         }
       }
     </style>
@@ -809,7 +894,18 @@
                       id: post.num,
                       date: post.date * 1000,
                       text: post.comment || '',
-                      files: post.files || [],
+                      files: (post.files || []).map(f => {
+                        const guessedThumb = (typeof f.path === 'string' && f.path.includes('/src/'))
+                          ? f.path.replace('/src/', '/thumb/')
+                          : null;
+                        return {
+                          path: f.path,
+                          thumbnail: f.thumbnail || f.thumbnail_path || f.thumbnail_url || f.preview || guessedThumb,
+                          name: f.name || '',
+                          size: typeof f.size === 'number' ? f.size : (f.size_bytes || f.filesize || null),
+                          type: f.type
+                        };
+                      }),
                       subject: post.subject || ''
                     }));
                   }
@@ -918,11 +1014,11 @@
                      postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.15)';
                      postElement.style.border = '2px solid var(--tg-theme-button-color)';
                      
-                     // Убираем подсветку через 3 секунды
+                     // Убираем подсветку через 2 секунды
                      setTimeout(() => {
                        postElement.style.backgroundColor = '';
                        postElement.style.border = '';
-                     }, 3000);
+                     }, 2000);
                      
                      // Добавляем анимацию пульсации
                      postElement.style.animation = 'pulse 0.6s ease-in-out';
@@ -1000,6 +1096,71 @@
                      }, 300);
                    }, 3000);
                  },
+                  
+                  // Типы файлов
+                  isImage(file) {
+                    if (!file) return false;
+                    if (file.type === 0) return true;
+                    const name = (file.name || file.path || '').toLowerCase();
+                    return /(\.jpg|\.jpeg|\.png|\.gif|\.webp|\.bmp)$/.test(name);
+                  },
+                  isVideo(file) {
+                    if (!file) return false;
+                    if (file.type === 1) return true;
+                    const name = (file.name || file.path || '').toLowerCase();
+                    return /(\.mp4|\.webm|\.mov|\.m4v|\.avi)$/.test(name);
+                  },
+                  
+                  getPrimaryImage(post) {
+                    if (!post || !post.files) return null;
+                    const image = post.files.find(f => this.isImage(f));
+                    return image || null;
+                  },
+                  getOtherFiles(post) {
+                    if (!post || !post.files) return [];
+                    const shown = this.getPrimaryImage(post);
+                    return post.files.filter(f => !shown || f !== shown);
+                  },
+                  
+                  // Lightbox
+                  openImage(file) {
+                    const fullSrc = 'https://2ch.hk' + file.path;
+                    const kb = file.size ? Math.round(Number(file.size) / 1024) : null;
+                    const info = `${file.name || 'image'}${kb ? ` • ${kb} KB` : ''}`;
+                    this.showLightbox(fullSrc, info);
+                  },
+                  showLightbox(src, infoText) {
+                    // Создаем overlay
+                    const overlay = document.createElement('div');
+                    overlay.className = 'lightbox-overlay';
+                    overlay.addEventListener('click', () => document.body.removeChild(overlay));
+                    
+                    const content = document.createElement('div');
+                    content.className = 'lightbox-content';
+                    
+                    const img = document.createElement('img');
+                    img.className = 'lightbox-image';
+                    img.src = src;
+                    img.alt = infoText || '';
+                    
+                    const info = document.createElement('div');
+                    info.className = 'lightbox-info';
+                    info.textContent = infoText || '';
+                    
+                    const close = document.createElement('button');
+                    close.className = 'lightbox-close';
+                    close.textContent = 'Закрыть';
+                    close.addEventListener('click', (e) => {
+                      e.stopPropagation();
+                      document.body.removeChild(overlay);
+                    });
+                    
+                    content.appendChild(img);
+                    content.appendChild(info);
+                    overlay.appendChild(content);
+                    overlay.appendChild(close);
+                    document.body.appendChild(overlay);
+                  },
                  
                  // Обработка свайпа вправо
                  handleTouchStart(e) {
@@ -1109,26 +1270,49 @@
                     <button class="retry-button" @click="retryLoad">Повторить</button>
                   </div>
                   
-                  <div v-else-if="posts.length > 0" class="posts-container">
+                   <div v-else-if="posts.length > 0" class="posts-container">
                                          <div v-for="post in posts" :key="post.id" class="post-card" :data-post-id="post.id">
                       <div class="post-header">
                         <span class="post-number">#{{ post.id }}</span>
                         <span class="post-date">{{ formatTimestamp(post.date) }}</span>
                       </div>
                       
-                      <div class="post-content">
-                        <div v-if="post.subject" class="post-subject" style="font-weight: bold; margin-bottom: 8px;">
-                          {{ post.subject }}
-                        </div>
-                                                 <div v-if="post.text" class="post-text" v-html="processPostText(post.text)"></div>
-                        
-                        <div v-if="post.files && post.files.length > 0" class="post-files">
-                          <div v-for="file in post.files" :key="file.path" class="post-file">
-                            <img v-if="file.type === 0" :src="'https://2ch.hk' + file.path" :alt="file.name" loading="lazy">
-                            <video v-else-if="file.type === 1" :src="'https://2ch.hk' + file.path" controls preload="metadata"></video>
-                          </div>
-                        </div>
-                      </div>
+                       <div class="post-content">
+                         <div v-if="getPrimaryImage(post)" class="post-thumb">
+                           <img
+                             :src="'https://2ch.hk' + (getPrimaryImage(post).thumbnail || getPrimaryImage(post).path)"
+                             :alt="getPrimaryImage(post).name"
+                             loading="lazy"
+                             @click="openImage(getPrimaryImage(post))"
+                             @error="e => { const img = e.target; const p = getPrimaryImage(post); if (p && p.path) img.src = 'https://2ch.hk' + p.path; }"
+                           >
+                         </div>
+                         <div class="post-info">
+                           <div v-if="post.subject" class="post-subject" style="font-weight: bold; margin-bottom: 8px;">
+                             {{ post.subject }}
+                           </div>
+                           <div v-if="post.text" class="post-text" v-html="processPostText(post.text)"></div>
+
+                           <div v-if="getOtherFiles(post).length > 0" class="post-files">
+                             <div v-for="file in getOtherFiles(post)" :key="file.path" class="post-file">
+                               <img
+                                 v-if="isImage(file)"
+                                 :src="'https://2ch.hk' + (file.thumbnail || file.path)"
+                                 :alt="file.name"
+                                 loading="lazy"
+                                 @click="openImage(file)"
+                                 @error="e => { const img = e.target; if (file.path) img.src = 'https://2ch.hk' + file.path; }"
+                               >
+                               <video
+                                 v-else-if="isVideo(file)"
+                                 :src="'https://2ch.hk' + file.path"
+                                 controls
+                                 preload="metadata"
+                               ></video>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
                     </div>
                     
                     <!-- Индикатор загрузки дополнительных постов -->
@@ -1151,7 +1335,9 @@
                   </div>
                 </div>
               `
-            }).mount('#app');
+             }).mount('#app');
+
+            // Lightbox корневой контейнер (динамический через Vue template ниже)
 
             // Показываем приложение
             appLoading.style.display = 'none';
