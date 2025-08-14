@@ -773,6 +773,42 @@
         if (window.Telegram && window.Telegram.WebApp) {
           tg = window.Telegram.WebApp;
           
+          // Проверяем платформу - только для iOS
+          const platform = window.Telegram.WebApp.platform;
+          if (platform !== 'ios') {
+            // Показываем сообщение о том, что приложение доступно только для iPhone
+            document.body.innerHTML = `
+              <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                padding: 20px;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              ">
+                <div style="
+                  font-size: 24px;
+                  font-weight: 600;
+                  margin-bottom: 16px;
+                  color: #333;
+                ">
+                  📱 Только для iPhone
+                </div>
+                <div style="
+                  font-size: 16px;
+                  color: #666;
+                  line-height: 1.5;
+                ">
+                  Это приложение доступно только для устройств Apple iOS.<br>
+                  Откройте приложение на iPhone или iPad.
+                </div>
+              </div>
+            `;
+            return;
+          }
+          
           // Отключаем свайп вниз для закрытия приложения
           try {
             if (window.Telegram && window.Telegram.WebApp) {
