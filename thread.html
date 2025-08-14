@@ -132,11 +132,43 @@
          to { transform: rotate(360deg); }
        }
        
-       @keyframes pulse {
-         0% { transform: scale(1); }
-         50% { transform: scale(1.02); }
-         100% { transform: scale(1); }
-       }
+               @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+        
+        /* Анимация свайпа вправо */
+        @keyframes swipeRight {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(100%); }
+        }
+        
+        .swipe-indicator {
+          position: fixed;
+          top: 50%;
+          left: 20px;
+          transform: translateY(-50%);
+          background-color: var(--tg-theme-button-color);
+          color: var(--tg-theme-button-text-color);
+          padding: 12px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 500;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s ease;
+          z-index: 1001;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .swipe-indicator.show {
+          opacity: 1;
+        }
+        
+        .swipe-indicator.swiping {
+          animation: swipeRight 0.3s ease-out forwards;
+        }
 
       /* Стили для постов */
       .thread-container {
@@ -654,19 +686,24 @@
 
             createApp({
               data() {
-                return {
-                  boardId: boardId,
-                  threadId: threadId,
-                  threadInfo: null,
-                  posts: [],
-                  allPosts: [],
-                  loading: false,
-                  error: null,
-                  page: 1,
-                  postsPerPage: 20,
-                  hasMore: true,
-                  loadingMore: false
-                };
+                                 return {
+                   boardId: boardId,
+                   threadId: threadId,
+                   threadInfo: null,
+                   posts: [],
+                   allPosts: [],
+                   loading: false,
+                   error: null,
+                   page: 1,
+                   postsPerPage: 20,
+                   hasMore: true,
+                   loadingMore: false,
+                   showSwipeIndicator: false,
+                   touchStartX: 0,
+                   touchStartY: 0,
+                   touchEndX: 0,
+                   touchEndY: 0
+                 };
               },
               methods: {
                 async loadThreadInfo() {
@@ -962,45 +999,105 @@
                        }
                      }, 300);
                    }, 3000);
+                 },
+                 
+                 // Обработка свайпа вправо
+                 handleTouchStart(e) {
+                   this.touchStartX = e.touches[0].clientX;
+                   this.touchStartY = e.touches[0].clientY;
+                 },
+                 
+                 handleTouchMove(e) {
+                   this.touchEndX = e.touches[0].clientX;
+                   this.touchEndY = e.touches[0].clientY;
+                   
+                   // Показываем индикатор при движении вправо
+                   const deltaX = this.touchEndX - this.touchStartX;
+                   const deltaY = Math.abs(this.touchEndY - this.touchStartY);
+                   
+                   if (deltaX > 50 && deltaY < 100) {
+                     this.showSwipeIndicator = true;
+                   }
+                 },
+                 
+                 handleTouchEnd() {
+                   const deltaX = this.touchEndX - this.touchStartX;
+                   const deltaY = Math.abs(this.touchEndY - this.touchStartY);
+                   
+                   // Если свайп вправо достаточно длинный и горизонтальный
+                   if (deltaX > 100 && deltaY < 100) {
+                     this.triggerSwipeBack();
+                   }
+                   
+                   // Скрываем индикатор
+                   this.showSwipeIndicator = false;
+                 },
+                 
+                 triggerSwipeBack() {
+                   // Показываем анимацию свайпа
+                   const indicator = document.querySelector('.swipe-indicator');
+                   if (indicator) {
+                     indicator.classList.add('swiping');
+                   }
+                   
+                   // Задержка перед навигацией для показа анимации
+                   setTimeout(() => {
+                     this.goBack();
+                   }, 300);
                  }
               },
               
-                                            mounted() {
-                 this.loadThreadInfo();
-                 this.loadPosts();
-                 
-                 // Добавляем обработчик скролла для ленивой загрузки
-                 window.addEventListener('scroll', this.onScroll);
-                 
-                 // Добавляем обработчик кликов по ссылкам на посты
-                 this.$nextTick(() => {
-                   this.setupPostLinks();
-                 });
-                 
-                 // Сохраняем ссылку на Vue приложение глобально
-                 window.vueAppInstance = this;
-               },
+                                                            mounted() {
+                  this.loadThreadInfo();
+                  this.loadPosts();
+                  
+                  // Добавляем обработчик скролла для ленивой загрузки
+                  window.addEventListener('scroll', this.onScroll);
+                  
+                  // Добавляем обработчики свайпа
+                  document.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+                  document.addEventListener('touchmove', this.handleTouchMove, { passive: true });
+                  document.addEventListener('touchend', this.handleTouchEnd, { passive: true });
+                  
+                  // Добавляем обработчик кликов по ссылкам на посты
+                  this.$nextTick(() => {
+                    this.setupPostLinks();
+                  });
+                  
+                  // Сохраняем ссылку на Vue приложение глобально
+                  window.vueAppInstance = this;
+                },
               
-                             beforeUnmount() {
-                 // Убираем обработчик скролла
-                 window.removeEventListener('scroll', this.onScroll);
-                 
-                 // Убираем обработчик кликов по ссылкам
-                 if (this.postLinksHandler) {
-                   document.removeEventListener('click', this.postLinksHandler);
-                 }
-               },
+                                             beforeUnmount() {
+                  // Убираем обработчик скролла
+                  window.removeEventListener('scroll', this.onScroll);
+                  
+                  // Убираем обработчики свайпа
+                  document.removeEventListener('touchstart', this.handleTouchStart);
+                  document.removeEventListener('touchmove', this.handleTouchMove);
+                  document.removeEventListener('touchend', this.handleTouchEnd);
+                  
+                  // Убираем обработчик кликов по ссылкам
+                  if (this.postLinksHandler) {
+                    document.removeEventListener('click', this.postLinksHandler);
+                  }
+                },
               
-              template: `
-                <div class="thread-container">
-                  <div class="thread-header">
-                    <button class="back-button" @click="goBack">К списку тредов</button>
-                    <div class="thread-info">
-                      <div class="thread-id">/{{ boardId }}/#{{ threadId }}</div>
-                      <div class="thread-title">{{ threadInfo?.title }}</div>
-                      <div class="thread-description" v-if="threadInfo?.description">{{ threadInfo.description }}</div>
-                    </div>
-                  </div>
+                             template: `
+                 <div class="thread-container">
+                   <!-- Индикатор свайпа вправо -->
+                   <div class="swipe-indicator" :class="{ show: showSwipeIndicator }">
+                     Свайп вправо для возврата
+                   </div>
+                   
+                   <div class="thread-header">
+                     <button class="back-button" @click="goBack">К списку тредов</button>
+                     <div class="thread-info">
+                       <div class="thread-id">/{{ boardId }}/#{{ threadId }}</div>
+                       <div class="thread-title">{{ threadInfo?.title }}</div>
+                       <div class="thread-description" v-if="threadInfo?.description">{{ threadInfo.description }}</div>
+                     </div>
+                   </div>
                   
                   <div v-if="loading" class="error-message">
                     <div class="spinner"></div>
