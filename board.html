@@ -143,9 +143,10 @@
       .swipe-indicator {
         position: fixed;
         top: 50%;
-        left: 20px;
+        height: 100%;
+        left: 0px;
         transform: translateY(-50%);
-        background-color: var(--tg-theme-button-color);
+        background-color: rgba(134, 196, 238, 0.418);
         color: var(--tg-theme-button-text-color);
         padding: 12px 16px;
         border-radius: 20px;
@@ -1127,7 +1128,7 @@
                 <div class="board-container">
                   <!-- Индикатор свайпа вправо -->
                   <div class="swipe-indicator" :class="{ show: showSwipeIndicator }">
-                    Свайп вправо для возврата
+                    &nbsp;
                   </div>
                   
                   <div class="board-header">
