@@ -273,7 +273,7 @@
       }
 
       html.dark .post-card:hover {
-        background-color: rgba(59, 58, 58, 0.1);
+        background-color: rgba(221, 221, 221, 0.1);
       }
 
       /* Разделители между постами */
@@ -859,8 +859,8 @@
                     this.threadInfo = {
                       id: this.threadId,
                       boardId: this.boardId,
-                      title: `Тред #${this.threadId}`,
-                      description: `Обсуждение в треде #${this.threadId}`
+                      title: '',
+                      description: ''
                     };
                   } catch (e) {
                     console.error('Ошибка при загрузке информации о треде:', e);
@@ -876,6 +876,8 @@
                     // Загружаем все посты
                     const allPosts = await this.fetchPosts();
                     this.allPosts = allPosts;
+                     // Обновляем заголовок треда на основе первого поста
+                     this.updateThreadTitle();
                     
                     // Показываем первую страницу
                     this.loadNextPage();
@@ -1093,6 +1095,37 @@
                     }
                     // Пост есть, но не отрисован — догружаем
                     this.loadPostAndScroll(normalized);
+                  },
+
+                  updateThreadTitle() {
+                    try {
+                      if (!this.threadInfo) {
+                        this.threadInfo = { id: this.threadId, boardId: this.boardId, title: '', description: '' };
+                      }
+                      if (Array.isArray(this.allPosts) && this.allPosts.length > 0) {
+                        const opWithSubject = this.allPosts.find(p => p.subject && String(p.subject).trim().length > 0);
+                        const op = opWithSubject || this.allPosts[0];
+                        let title = '';
+                        if (op.subject && String(op.subject).trim().length > 0) {
+                          title = String(op.subject).trim();
+                        } else if (op.text) {
+                          // Берем немного текста из первого поста как заголовок, убирая HTML
+                          const plain = String(op.text)
+                            .replace(/<br\s*\/?>(\r?\n)?/gi, ' ')
+                            .replace(/<[^>]*>/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                          title = plain.slice(0, 80) || '';
+                        }
+                        if (title) {
+                          this.threadInfo.title = title;
+                        } else {
+                          this.threadInfo.title = 'Без названия';
+                        }
+                      }
+                    } catch (e) {
+                      console.warn('Не удалось обновить заголовок треда:', e);
+                    }
                   },
                  
                   async loadPostAndScroll(postNum) {
@@ -1317,14 +1350,14 @@
                      Свайп вправо для возврата
                    </div>
                    
-                   <div class="thread-header">
-                     <button class="back-button" @click="goBack">К списку тредов</button>
-                     <div class="thread-info">
-                       <div class="thread-id">/{{ boardId }}/#{{ threadId }}</div>
-                       <div class="thread-title">{{ threadInfo?.title }}</div>
-                       <div class="thread-description" v-if="threadInfo?.description">{{ threadInfo.description }}</div>
-                     </div>
-                   </div>
+                    <div class="thread-header">
+                      <button class="back-button" @click="goBack">К списку тредов</button>
+                      <div class="thread-info">
+                        <div class="thread-id">/{{ boardId }}/#{{ threadId }}</div>
+                        <div class="thread-title">{{ threadInfo?.title }}</div>
+                        <div class="thread-description" v-if="threadInfo?.description">{{ threadInfo.description }}</div>
+                      </div>
+                    </div>
                   
                   <div v-if="loading" class="error-message">
                     <div class="spinner"></div>
