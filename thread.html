@@ -603,6 +603,31 @@
          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
        }
 
+        /* Красная плашка-алерт */
+        .alert-banner {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          transform: translateY(-100%);
+          background-color: #d32f2f;
+          color: #ffffff;
+          padding: 12px 16px;
+          text-align: center;
+          font-size: 14px;
+          font-weight: 600;
+          z-index: 11000;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+          transition: transform 0.25s ease;
+        }
+        .alert-banner.show {
+          transform: translateY(0);
+        }
+        html.dark .alert-banner {
+          background-color: #ef5350;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
         /* Lightbox */
         .lightbox-overlay {
           position: fixed;
@@ -1040,48 +1065,48 @@
                  
 
                  
-                 scrollToPost(postNum) {
-                   // Ищем пост с указанным номером
-                   const postElement = document.querySelector(`[data-post-id="${postNum}"]`);
-                   if (postElement) {
-                     // Плавная прокрутка к посту
-                     postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                     
-                     // Добавляем подсветку поста
-                     postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.15)';
-                     postElement.style.border = '2px solid var(--tg-theme-button-color)';
-                     
-                     // Убираем подсветку через 2 секунды
-                     setTimeout(() => {
-                       postElement.style.backgroundColor = '';
-                       postElement.style.border = '';
-                     }, 2000);
-                     
-                     // Добавляем анимацию пульсации
-                     postElement.style.animation = 'pulse 0.6s ease-in-out';
-                     setTimeout(() => {
-                       postElement.style.animation = '';
-                     }, 600);
-                     
-                     // Показываем уведомление
-                     this.showNotification(`Переход к посту #${postNum}`);
-                   } else {
-                     // Если пост еще не загружен, загружаем его
-                     this.loadPostAndScroll(postNum);
-                   }
-                 },
+                  scrollToPost(postNum) {
+                    const normalized = Number(postNum);
+                    if (!normalized || normalized < 1) {
+                      this.showAlert('Некорректная ссылка на пост');
+                      return;
+                    }
+                    // Ищем пост в DOM
+                    const postElement = document.querySelector(`[data-post-id="${normalized}"]`);
+                    if (postElement) {
+                      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      postElement.style.backgroundColor = 'rgba(38, 120, 182, 0.15)';
+                      postElement.style.border = '2px solid var(--tg-theme-button-color)';
+                      setTimeout(() => {
+                        postElement.style.backgroundColor = '';
+                        postElement.style.border = '';
+                      }, 1200);
+                      postElement.style.animation = 'pulse 0.6s ease-in-out';
+                      setTimeout(() => { postElement.style.animation = ''; }, 600);
+                      return;
+                    }
+                    // Проверяем, есть ли такой пост в данных
+                    const existsInData = Array.isArray(this.allPosts) && this.allPosts.some(p => p.id == normalized);
+                    if (!existsInData) {
+                      this.showAlert(`Пост #${normalized} не найден`);
+                      return;
+                    }
+                    // Пост есть, но не отрисован — догружаем
+                    this.loadPostAndScroll(normalized);
+                  },
                  
-                 async loadPostAndScroll(postNum) {
-                   // Загружаем все посты если нужно
-                   if (this.hasMore) {
-                     await this.loadAllPosts();
-                   }
-                   
-                   // Теперь ищем пост
-                   this.$nextTick(() => {
-                     this.scrollToPost(postNum);
-                   });
-                 },
+                  async loadPostAndScroll(postNum) {
+                    if (this.hasMore) {
+                      await this.loadAllPosts();
+                    }
+                    // Если после догрузки пост так и не появился — показываем алерт
+                    const existsInData = Array.isArray(this.allPosts) && this.allPosts.some(p => p.id == postNum);
+                    if (!existsInData) {
+                      this.showAlert(`Пост #${postNum} не найден`);
+                      return;
+                    }
+                    this.$nextTick(() => { this.scrollToPost(postNum); });
+                  },
                  
                  async loadAllPosts() {
                    try {
@@ -1109,30 +1134,21 @@
                    }
                  },
                  
-                 showNotification(message) {
-                   // Создаем элемент уведомления
-                   const notification = document.createElement('div');
-                   notification.className = 'post-notification';
-                   notification.textContent = message;
-                   
-                   // Добавляем в DOM
-                   document.body.appendChild(notification);
-                   
-                   // Показываем уведомление
-                   setTimeout(() => {
-                     notification.classList.add('show');
-                   }, 100);
-                   
-                   // Скрываем через 3 секунды
-                   setTimeout(() => {
-                     notification.classList.remove('show');
-                     setTimeout(() => {
-                       if (notification.parentNode) {
-                         notification.parentNode.removeChild(notification);
-                       }
-                     }, 300);
-                   }, 3000);
-                 },
+                  // Визуальный алерт сверху (красная плашка)
+                  showAlert(message) {
+                    let banner = document.querySelector('.alert-banner');
+                    if (!banner) {
+                      banner = document.createElement('div');
+                      banner.className = 'alert-banner';
+                      document.body.appendChild(banner);
+                    }
+                    banner.textContent = message;
+                    requestAnimationFrame(() => banner.classList.add('show'));
+                    clearTimeout(this._alertTimer);
+                    this._alertTimer = setTimeout(() => {
+                      banner.classList.remove('show');
+                    }, 2500);
+                  },
                   
                   // Типы файлов
                   isImage(file) {
