@@ -9,7 +9,6 @@ servers:
   - url: 'http://127.0.0.1'
   - url: 'https://2ch.hk'
   - url: 'https://beta.2ch.hk'
-
 paths:
   /api/mobile/v2/boards:
     get:
