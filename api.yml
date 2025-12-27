@@ -20,7 +20,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Boards'
-
   /api/mobile/v2/after/{board}/{thread}/{num}:
     get:
       summary: Получение постов в треде >= указанного. Не рекомендуется использовать для получения треда целиком, только для проверки новых постов.
